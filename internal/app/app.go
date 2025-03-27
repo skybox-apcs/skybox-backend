@@ -1,36 +1,21 @@
 package app
 
 import (
-	"log"
-
-	"skybox-backend/configs"
-	"skybox-backend/internal/repositories"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type App struct {
-	server *Server
+type Application struct {
+	Mongo *mongo.Client
 }
 
-func NewApp() (*App, error) {
-	// Initalize DB Server
-	db, err := repositories.NewMongoClient(configs.Config.MongoURI, "your-db-name")
-	if err != nil {
-		return nil, err
-	}
+func NewApplication() Application {
+	app := &Application{}
 
-	// Wire up the dependencies
-	initDependencies(db)
+	app.Mongo = NewMongoDatabase() // Connect to the MongoDB
 
-	// Initialize the HTTP server
-	server := NewServer()
-
-	return &App{
-		server: server,
-	}, nil
+	return *app
 }
 
-func (a *App) Run() {
-	// Start the HTTP server
-	log.Println("Starting the server...")
-	a.server.startServer()
+func (app *Application) CloseDBConnection() {
+	CloseMongoDatabase(app.Mongo)
 }
