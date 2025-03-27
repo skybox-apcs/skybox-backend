@@ -1,14 +1,12 @@
 package routes
 
 import (
-	// "skybox-backend/internal/app/controllers"
-
 	"github.com/gin-gonic/gin"
 )
 
-func HelloWorld(c *gin.Context) {
+func HelloWorldFunc(c *gin.Context) {
 	c.JSON(200, gin.H{
-		"message": "Hello World!",
+		"message": "Hello World",
 	})
 }
 
@@ -16,8 +14,11 @@ func HelloWorld(c *gin.Context) {
 func SetupRouter(router *gin.Engine) *gin.Engine {
 	api := router.Group("/api/v1")
 	{
-		api.GET("/hello", HelloWorld)
+		api.GET("/hello", HelloWorldFunc)
 	}
+
+	// Add the auth routes
+	RegisterLoginRoutes(api)
 
 	return router
 }
