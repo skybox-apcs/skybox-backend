@@ -14,7 +14,8 @@ type AppConfig struct {
 	ReleaseMode bool
 
 	// Database Config
-	MongoURI string
+	MongoURI    string
+	MongoDBName string
 
 	// JWT Config
 	JWTSecret string
@@ -38,7 +39,8 @@ func LoadConfig() {
 	Config.ServerPort = getEnv("SERVER_PORT", "8080")
 	Config.ServerHost = getEnv("SERVER_HOST", "localhost")
 	Config.ReleaseMode = getEnv("GIN_MODE", "debug") == "release"
-	Config.MongoURI = getEnv("MONGO_URI", "mongodb://localhost:27017")
+	Config.MongoURI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
+	Config.MongoDBName = getEnv("MONGODB_NAME", "test")
 	Config.JWTSecret = getEnv("JWT_SECRET_KEY", "secret")
 	Config.AWSKey = getEnv("AWS_SECRET_KEY_ID", "")
 	Config.AWSSecret = getEnv("AWS_SECRET_ACCESS_KEY", "")

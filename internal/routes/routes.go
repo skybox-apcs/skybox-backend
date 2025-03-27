@@ -1,24 +1,34 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func HelloWorldFunc(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Hello World",
-	})
+func HelloWorld(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "Hello, World!"})
 }
 
-// SetupRouter sets up the routes and the corresponding handlers
-func SetupRouter(router *gin.Engine) *gin.Engine {
-	api := router.Group("/api/v1")
+// SetupRoutes sets up the routes and the corresponding handlers
+func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
+	publicRouter := gin.Group("")
+
+	// Setup the v1 routes
+	v1 := publicRouter.Group("/api/v1")
+
+	// Public routes
 	{
-		api.GET("/hello", HelloWorldFunc)
+		// Setup the auth routes
+		NewAuthRouters(db, v1)
+
+		v1.GET("/", HelloWorld)
+	}
+	// Private routes
+	{
+		// ...
 	}
 
-	// Add the auth routes
-	RegisterLoginRoutes(api)
-
-	return router
+	return gin
 }

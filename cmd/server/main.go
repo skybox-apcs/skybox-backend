@@ -10,13 +10,18 @@ func main() {
 	// Load Configurations
 	configs.LoadConfig()
 
-	// Initialize the application
-	application, err := app.NewApp()
+	// Create a new application
+	application := app.NewApplication()
 
-	if err != nil {
-		panic(err)
-	}
+	// Setup the DB
+	db := application.Mongo.Database(configs.Config.MongoDBName)
+	defer application.CloseDBConnection()
 
-	// Run the application
-	application.Run()
+	// Start the server
+	ginServer := app.NewServer()
+	ginServer.SecurityMiddleware()
+	ginServer.RouteMiddleware(db)
+	ginServer.GlobalErrorHandler()
+
+	ginServer.StartServer()
 }
