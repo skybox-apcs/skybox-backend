@@ -1,15 +1,11 @@
-# # SkyBox ☁️
+# SkyBox ☁️
 
 [![Go Version](https://img.shields.io/badge/go-1.20%2B-00ADD8?logo=go)](https://golang.org/dl/)
 [![License: GPL](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![AWS S3](https://img.shields.io/badge/storage-AWS_S3-FF9900?logo=amazon-aws)](https://aws.amazon.com/s3/)
 [![MongoDB Atlas](https://img.shields.io/badge/database-MongoDB_Atlas-47A248?logo=mongodb)](https://www.mongodb.com/atlas/database)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/skybox/go.yml?branch=main)](https://github.com/your-org/skybox/actions)
-[![Code Coverage](https://img.shields.io/codecov/c/github/your-org/skybox)](https://codecov.io/gh/your-org/skybox)
-[![GitHub Issues](https://img.shields.io/github/issues/your-org/skybox)](https://github.com/your-org/skybox/issues)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/your-org/skybox/pulls)
 
-<!--toc:start-->
+<!---toc:start-->
 - [SkyBox ☁️](#skybox-️)
   - [Features ✨](#features)
     - [Core Features](#core-features)
@@ -65,7 +61,6 @@ SkyBox is a secure, scalable cloud storage solution inspired by Google Drive and
 
 - Go 1.20+
 - MongoDB 6.0+
-
 - AWS Account with S3 access
 - Node.js (for frontend)
 
@@ -121,3 +116,7 @@ The project could not have been completed without these developers!
   - <nhphuc221@apcs.fitus.edu.vn>
 - 22125115 - Ngô Hoàng Tuấn
   - <nhtuan22@apcs.fitus.edu.vn>
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](https://github.com/skybox-apcs/skybox-backend/blob/KAN-1/LICENSE) file for details.
