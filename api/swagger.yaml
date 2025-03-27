@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: SkyBox API
+  description: API for SkyBox file storage service
+  version: 1.0.0
+paths:
+  /api/v1/hello:
+    GET:
+      summary: Hello World.
+      responses:
+        "200":
+          description: Hello World.
