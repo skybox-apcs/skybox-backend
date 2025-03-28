@@ -37,13 +37,11 @@ func (s *Server) SecurityMiddleware() {
 	// X-Content-Type-Options: nosniff - Prevents browsers from MIME-sniffing a response away from the declared content-type
 	// X-Frame-Options: DENY - Prevents clickjacking attacks
 	// X-XSS-Protection: 1; mode=block - Prevents reflected XSS attacks
-	// Content-Security-Policy: default-src 'self' - Prevents XSS, clickjacking, code injection attacks
 	// Strict-Transport-Security: max-age=31536000; includeSubDomains - Forces the browser to use HTTPS for the next year
 	s.app.Use(func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
-		c.Header("Content-Security-Policy", "default-src 'self'")
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		c.Next()
 	})

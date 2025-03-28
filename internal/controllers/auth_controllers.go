@@ -23,7 +23,18 @@ func NewAuthController(as *services.AuthService) *AuthController {
 	}
 }
 
-// LoginHandler is a handler that authenticates the user
+// LoginHandler godoc
+//	@Summary		Authenticates the user
+//	@Description	Authenticates the user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			email		body		string	true	"Email"
+//	@Param			password	body		string	true	"Password"
+//	@Success		200			{object}	models.User
+//	@Failure		400			{string}	string	"Invalid request"
+//	@Failure		401			{string}	string	"Invalid credentials"
+//	@Router			/auth/login [post]
 func (ac *AuthController) LoginHandler(c *gin.Context) {
 	// Define the request body struct
 	var request struct {
@@ -78,6 +89,20 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 }
 
 // RegisterHandler is a handler that registers a new user
+// RegisterHandler godoc
+//	@Summary		Registers a new user
+//	@Description	Registers a new user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			email		body		string	true	"Email"
+//	@Param			password	body		string	true	"Password"
+//	@Param			username	body		string	true	"Username"
+//	@Success		201			{string}	string	"User registered successfully"
+//	@Failure		400			{string}	string	"Invalid request"
+//	@Failure		409			{string}	string	"User already exists with the email"
+//	@Failure		500			{string}	string	"Failed to register the user"
+//	@Router			/auth/register [post]
 func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	// Define the request body struct
 	var request struct {

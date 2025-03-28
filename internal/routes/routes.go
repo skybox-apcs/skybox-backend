@@ -6,11 +6,16 @@ import (
 	"skybox-backend/internal/middlewares"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // SetupRoutes sets up the routes and the corresponding handlers
 func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
+	// Swagger routes
+	gin.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	publicRouter := gin.Group("")
 
 	// Setup the v1 routes
