@@ -13,11 +13,14 @@ const (
 
 // User struct encapsulates the user model
 type User struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Email        string             `bson:"email" json:"email"`
-	PasswordHash string             `bson:"password_hash" json:"-"`
-	CreatedAt    time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt    time.Time          `bson:"updated_at" json:"updated_at"`
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Username             string             `bson:"username" json:"username"`
+	Email                string             `bson:"email" json:"email"`
+	PasswordHash         string             `bson:"password_hash" json:"-"`
+	LastLoginAt          time.Time          `bson:"last_login_at" json:"last_login_at"`
+	LastPasswordChangeAt time.Time          `bson:"last_password_change_at" json:"last_password_change_at"`
+	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
 type UserRepository interface {

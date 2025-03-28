@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"skybox-backend/configs"
 
@@ -14,6 +15,7 @@ func NewMongoDatabase() *mongo.Client {
 	opts := options.Client().ApplyURI(configs.Config.MongoURI)
 
 	// Connect to the MongoDB
+	fmt.Println("Connecting to MongoDB...")
 	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
 		panic(err)
@@ -25,6 +27,7 @@ func NewMongoDatabase() *mongo.Client {
 		panic(err)
 	}
 
+	fmt.Println("Connected to MongoDB")
 	return client
 }
 

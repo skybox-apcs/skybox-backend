@@ -10,15 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// SetupRoutes sets up the routes and the corresponding handlers
+// NewAuthRouters sets up the routes and the corresponding handlers
 func NewAuthRouters(db *mongo.Database, group *gin.RouterGroup) {
+	// Create a new instance of the user repository
 	ur := repositories.NewUserRepository(db, models.CollectionUsers)
 	ac := &controllers.AuthController{
 		AuthService: services.NewAuthService(ur),
 	}
 
+	// Create a new group for the auth routes
 	authGroup := group.Group("/auth")
 	{
-		authGroup.POST("/register", ac.Register)
+		authGroup.POST("/register", ac.RegisterHandler)
+		authGroup.POST("/login", ac.LoginHandler)
 	}
 }

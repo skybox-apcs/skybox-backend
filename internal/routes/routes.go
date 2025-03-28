@@ -1,15 +1,13 @@
 package routes
 
 import (
-	"net/http"
+	"skybox-backend/configs"
+	"skybox-backend/internal/controllers"
+	"skybox-backend/internal/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-func HelloWorld(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Hello, World!"})
-}
 
 // SetupRoutes sets up the routes and the corresponding handlers
 func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
@@ -23,11 +21,19 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 		// Setup the auth routes
 		NewAuthRouters(db, v1)
 
-		v1.GET("/", HelloWorld)
+		// Hello World routes
+		v1.GET("/hello", controllers.HelloWorldHandler)
 	}
+
 	// Private routes
+	protectedRouter := gin.Group("")
+	protectedRouter.Use(middlewares.JwtAuthMiddleware(configs.Config.JWTSecret))
+
+	v1 = protectedRouter.Group("/api/v1")
+
 	{
-		// ...
+		// Setup the user routes
+		NewUserRouters(db, v1)
 	}
 
 	return gin

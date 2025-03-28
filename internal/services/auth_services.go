@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"skybox-backend/internal/models"
+	"skybox-backend/pkg/utils"
 )
 
 // AuthService is the service for the authentication
@@ -40,4 +41,9 @@ func (as *AuthService) GetUserByID(ctx context.Context, id string) (*models.User
 	defer cancel()
 
 	return as.userRepository.GetUserByID(ctx, id)
+}
+
+// CreateAccessToken creates an access token for the user
+func (as *AuthService) CreateAccessToken(user *models.User, secret string, expiry int) (string, error) {
+	return utils.CreateAccessToken(user, secret, expiry)
 }
