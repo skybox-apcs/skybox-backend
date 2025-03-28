@@ -1,5 +1,37 @@
 basePath: /api/v1
 definitions:
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
   models.User:
     properties:
       created_at:
@@ -18,20 +50,21 @@ definitions:
         type: string
     type: object
 externalDocs:
-  description: OpenAPI
+  description: OpenAPI Documentation
   url: https://swagger.io/resources/open-api/
 host: localhost:8080
 info:
   contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server celler server.
+    email: support@skybox.io
+    name: Skybox Support
+    url: http://skybox.io/support
+  description: Skybox is a cloud-based file storage provider similar to Google Drive
+    and Dropbox. It allows users to securely store, manage, and retrieve their files.
   license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    name: GNU General Public License v3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
   termsOfService: http://swagger.io/terms/
-  title: Swagger Example API
+  title: Skybox API
   version: "1.0"
 paths:
   /auth/login:
@@ -40,25 +73,19 @@ paths:
       - application/json
       description: Authenticates the user
       parameters:
-      - description: Email
+      - description: Login Request
         in: body
-        name: email
+        name: request
         required: true
         schema:
-          type: string
-      - description: Password
-        in: body
-        name: password
-        required: true
-        schema:
-          type: string
+          $ref: '#/definitions/models.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: User authenticated successfully
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/models.LoginResponse'
         "400":
           description: Invalid request
           schema:
@@ -69,31 +96,19 @@ paths:
             type: string
       summary: Authenticates the user
       tags:
-      - auth
+      - Authentication
   /auth/register:
     post:
       consumes:
       - application/json
       description: Registers a new user
       parameters:
-      - description: Email
+      - description: Register Request
         in: body
-        name: email
+        name: request
         required: true
         schema:
-          type: string
-      - description: Password
-        in: body
-        name: password
-        required: true
-        schema:
-          type: string
-      - description: Username
-        in: body
-        name: username
-        required: true
-        schema:
-          type: string
+          $ref: '#/definitions/models.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -115,8 +130,47 @@ paths:
             type: string
       summary: Registers a new user
       tags:
-      - auth
+      - Authentication
+  /hello:
+    get:
+      consumes:
+      - application/json
+      description: Returns a hello world message
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hello World
+          schema:
+            type: string
+      summary: Returns a hello world message
+      tags:
+      - Misc
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: Returns the user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: User not found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Returns the user information
+      tags:
+      - User
 securityDefinitions:
-  BasicAuth:
-    type: basic
+  BearerAuth:
+    description: Use "Bearer {your_token}" to authenticate requests.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

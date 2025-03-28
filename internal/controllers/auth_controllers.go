@@ -24,23 +24,20 @@ func NewAuthController(as *services.AuthService) *AuthController {
 }
 
 // LoginHandler godoc
-//	@Summary		Authenticates the user
-//	@Description	Authenticates the user
-//	@Tags			auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			email		body		string	true	"Email"
-//	@Param			password	body		string	true	"Password"
-//	@Success		200			{object}	models.User
-//	@Failure		400			{string}	string	"Invalid request"
-//	@Failure		401			{string}	string	"Invalid credentials"
-//	@Router			/auth/login [post]
+//
+//		@Summary		Authenticates the user
+//		@Description	Authenticates the user
+//		@Tags			Authentication
+//		@Accept			json
+//		@Produce		json
+//	 @Param			request body	models.LoginRequest	true	"Login Request"
+//		@Success		200			{object}	models.LoginResponse	"User authenticated successfully"
+//		@Failure		400			{string}	string	"Invalid request"
+//		@Failure		401			{string}	string	"Invalid credentials"
+//		@Router			/auth/login [post]
 func (ac *AuthController) LoginHandler(c *gin.Context) {
 	// Define the request body struct
-	var request struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
-	}
+	var request models.LoginRequest
 
 	// Bind the request body to the struct and check if JSON object is valid
 	err := c.ShouldBind(&request)
@@ -75,11 +72,7 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	var response struct {
-		User         *models.User
-		AccessToken  string
-		RefreshToken string
-	}
+	var response models.LoginResponse
 
 	response.User = user
 	response.AccessToken = accessToken
@@ -90,26 +83,21 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 
 // RegisterHandler is a handler that registers a new user
 // RegisterHandler godoc
-//	@Summary		Registers a new user
-//	@Description	Registers a new user
-//	@Tags			auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			email		body		string	true	"Email"
-//	@Param			password	body		string	true	"Password"
-//	@Param			username	body		string	true	"Username"
-//	@Success		201			{string}	string	"User registered successfully"
-//	@Failure		400			{string}	string	"Invalid request"
-//	@Failure		409			{string}	string	"User already exists with the email"
-//	@Failure		500			{string}	string	"Failed to register the user"
-//	@Router			/auth/register [post]
+//
+//		@Summary		Registers a new user
+//		@Description	Registers a new user
+//		@Tags			Authentication
+//		@Accept			json
+//		@Produce		json
+//	  @Param      request body      models.RegisterRequest true "Register Request"
+//		@Success		201			{string}	string	"User registered successfully"
+//		@Failure		400			{string}	string	"Invalid request"
+//		@Failure		409			{string}	string	"User already exists with the email"
+//		@Failure		500			{string}	string	"Failed to register the user"
+//		@Router			/auth/register [post]
 func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	// Define the request body struct
-	var request struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8"`
-		Username string `json:"username" binding:"required,max=32"`
-	}
+	var request models.RegisterRequest
 
 	// Bind the request body to the struct and check if JSON object is valid
 	err := c.ShouldBind(&request)

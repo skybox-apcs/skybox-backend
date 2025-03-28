@@ -21,6 +21,16 @@ func NewUserController(us *services.UserService) *UserController {
 }
 
 // GetUserInformationHandler is a handler that returns the user information
+// GetUserInformationHandler godoc
+// @Summary Returns the user information
+// @Description Returns the user information
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} models.User
+// @Failure 404 {string} string "User not found"
+// @Router /user [get]
 func (uc *UserController) GetUserInformationHandler(c *gin.Context) {
 	// Get the user ID from the request context
 	userID := c.GetString("x-user-id")
