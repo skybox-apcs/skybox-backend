@@ -91,7 +91,7 @@ go mod download
 4. Run the application:
 
 ```bash
-go run main.go
+go run .\cmd\server\main.go
 ```
 
 5. Access the application:
