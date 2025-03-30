@@ -45,6 +45,7 @@ func main() {
 
 	// Start the server
 	ginServer := app.NewServer()
+	ginServer.CorsMiddleware()
 	ginServer.SecurityMiddleware()
 	ginServer.RouteMiddleware(db)
 	ginServer.GlobalErrorHandler()

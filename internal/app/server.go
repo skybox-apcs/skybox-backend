@@ -65,6 +65,25 @@ func (s *Server) GlobalErrorHandler() {
 	})
 }
 
+// corsMiddleware sets up CORS headers to allow all origins
+func (s *Server) CorsMiddleware() {
+    s.app.Use(func(c *gin.Context) {
+        c.Header("Access-Control-Allow-Origin", "*")
+        c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+        c.Header("Access-Control-Expose-Headers", "Content-Length")
+        c.Header("Access-Control-Allow-Credentials", "true")
+
+        // Handle preflight requests
+        if c.Request.Method == http.MethodOptions {
+            c.AbortWithStatus(http.StatusNoContent)
+            return
+        }
+
+        c.Next()
+    })
+}
+
 // Start initializes the server and starts listening on the specified port
 func (s *Server) StartServer() {
 	host := configs.Config.ServerHost
