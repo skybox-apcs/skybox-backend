@@ -26,7 +26,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "Authenticates the user",
+                "description": "This endpoint authenticates the user by checking the email and password. If the credentials are valid, it generates an access token and a refresh token.",
                 "consumes": [
                     "application/json"
                 ],
@@ -70,9 +70,96 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout": {
+            "post": {
+                "description": "Logs out the user and invalidates the refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logs out the user",
+                "responses": {
+                    "200": {
+                        "description": "User logged out successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to log out the user",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "This endpoint validates the refresh token and generates a new access token, allowing the user to continue their session without re-authenticating.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Validate and refresh the access token via refresh token",
+                "parameters": [
+                    {
+                        "description": "Refresh Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Access token refreshed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid refresh token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to refresh the access token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
-                "description": "Registers a new user",
+                "description": "This endpoint registers a new user by creating a new user record in the database.",
                 "consumes": [
                     "application/json"
                 ],
@@ -200,13 +287,60 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "access_token": {
+                    "description": "Access token",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "User email",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "User ID",
                     "type": "string"
                 },
                 "refresh_token": {
+                    "description": "Refresh token",
                     "type": "string"
                 },
-                "user": {
-                    "$ref": "#/definitions/models.User"
+                "username": {
+                    "description": "Username",
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "Access token",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "User email",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "User ID",
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "description": "Refresh token",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username",
+                    "type": "string"
                 }
             }
         },
@@ -222,10 +356,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 6
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 3
                 }
             }
         },
