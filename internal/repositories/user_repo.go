@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"skybox-backend/internal/models"
 
@@ -55,4 +56,37 @@ func (ur *userRepository) GetUserByID(ctx context.Context, id string) (*models.U
 	err = collection.FindOne(ctx, bson.M{"_id": idHex}).Decode(user)
 
 	return user, err
+}
+
+// GetUserByUsername retrieves a user by username
+func (ur *userRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	collection := ur.database.Collection(ur.collection)
+
+	user := &models.User{}
+	err := collection.FindOne(ctx, map[string]string{"username": username}).Decode(user)
+
+	return user, err
+}
+
+// UpdateUserLastLogin updates the last login time of a user
+func (ur *userRepository) UpdateUserLastLogin(ctx context.Context, id string) error {
+	collection := ur.database.Collection(ur.collection)
+
+	// Convert the string ID to ObjectID
+	idHex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	// Update the last login time
+	err = collection.FindOneAndUpdate(
+		ctx,
+		bson.M{"_id": idHex},
+		bson.M{"$set": bson.M{"last_login_at": time.Now()}},
+	).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
