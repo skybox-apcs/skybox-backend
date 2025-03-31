@@ -12,7 +12,7 @@ import (
 // CreateAccessToken creates an access token for the user
 func CreateAccessToken(user *models.User, secret string, expiry int) (string, error) {
 	// Calculate the expiry date
-	exp := time.Now().Add(time.Duration(expiry) * time.Second).Unix()
+	exp := time.Now().Add(time.Duration(expiry) * time.Hour).Unix()
 
 	// Create the claims
 	claims := jwt.MapClaims{
@@ -36,7 +36,7 @@ func CreateAccessToken(user *models.User, secret string, expiry int) (string, er
 // CreateRefreshToken creates a refresh token for the user
 func CreateRefreshToken(user *models.User, secret string, expiry int) (string, error) {
 	// Calculate the expiry date
-	exp := time.Now().Add(time.Duration(expiry) * time.Second).Unix()
+	exp := time.Now().Add(time.Duration(expiry) * time.Hour).Unix()
 
 	// Create the claims
 	claims := jwt.MapClaims{

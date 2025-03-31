@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"skybox-backend/internal/models"
 
@@ -63,12 +64,15 @@ func (utr *userTokenRepository) GetUserTokenByUserID(ctx context.Context, userID
 		return nil, err
 	}
 
+	// Find all user tokens for the given user ID
 	cursor, err := collection.Find(ctx, bson.M{"user_id": userIDHex})
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
+	// For every user token in the cursor, decode it into a UserToken struct
+	// and append it to the userTokens slice
 	var userTokens []models.UserToken
 	for cursor.Next(ctx) {
 		var userToken models.UserToken
@@ -77,6 +81,8 @@ func (utr *userTokenRepository) GetUserTokenByUserID(ctx context.Context, userID
 		}
 		userTokens = append(userTokens, userToken)
 	}
+
+	// Check for any errors that occurred during iteration
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
@@ -84,18 +90,18 @@ func (utr *userTokenRepository) GetUserTokenByUserID(ctx context.Context, userID
 	return &userTokens, nil
 }
 
-// DeleteUserToken deletes a user token by ID
-func (utr *userTokenRepository) DeleteUserToken(ctx context.Context, id string) error {
+// DeleteUserToken deletes a user token by token
+func (utr *userTokenRepository) DeleteUserToken(ctx context.Context, token string) error {
 	collection := utr.database.Collection(utr.collection)
 
-	idHex, err := primitive.ObjectIDFromHex(id)
+	// Delete the user token
+	fmt.Println("Deleting token:", token)
+	deleteResult, err := collection.DeleteOne(ctx, bson.M{"token": token})
 	if err != nil {
 		return err
 	}
-
-	_, err = collection.DeleteOne(ctx, bson.M{"_id": idHex})
-	if err != nil {
-		return err
+	if deleteResult.DeletedCount == 0 {
+		return fmt.Errorf("no token found with the provided token")
 	}
 
 	return nil
@@ -110,10 +116,6 @@ func (utr *userTokenRepository) DeleteUserTokensByUserID(ctx context.Context, us
 		return err
 	}
 
-	_, err = collection.DeleteMany(ctx, bson.M{"user_id": userIDHex})
-	if err != nil {
-		return err
-	}
-
+	collection.DeleteMany(ctx, bson.M{"user_id": userIDHex})
 	return nil
 }

@@ -26,6 +26,6 @@ type UserTokenRepository interface {
 	CreateUserToken(ctx context.Context, userToken *UserToken) error               // Create a new user token
 	GetUserTokenByID(ctx context.Context, id string) (*UserToken, error)           // Retrieve a user token by ID
 	GetUserTokenByUserID(ctx context.Context, userID string) (*[]UserToken, error) // Retrieve the list of tokens for a user
-	DeleteUserToken(ctx context.Context, id string) error                          // Delete a user token by ID
+	DeleteUserToken(ctx context.Context, token string) error                       // Delete a user token by token
 	DeleteUserTokensByUserID(ctx context.Context, userID string) error             // This is for log out every devices
 }

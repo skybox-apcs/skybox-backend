@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"skybox-backend/configs"
 	"skybox-backend/internal/controllers"
+	"skybox-backend/internal/middlewares"
 	"skybox-backend/internal/models"
 	"skybox-backend/internal/repositories"
 	"skybox-backend/internal/services"
@@ -26,5 +28,6 @@ func NewAuthRouters(db *mongo.Database, group *gin.RouterGroup) {
 		authGroup.POST("/register", ac.RegisterHandler)
 		authGroup.POST("/login", ac.LoginHandler)
 		authGroup.POST("/refresh", ac.RefreshHandler)
+		authGroup.POST("/logout", middlewares.JwtAuthMiddleware(configs.Config.JWTSecret), ac.LogoutHandler)
 	}
 }

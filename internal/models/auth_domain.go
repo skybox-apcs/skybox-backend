@@ -33,3 +33,10 @@ type RefreshResponse struct {
 	Username     string `json:"username"`      // Username
 	Email        string `json:"email"`         // User email
 }
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type LogoutResponse struct {
+}

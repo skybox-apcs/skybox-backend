@@ -25,6 +25,8 @@ func NewAuthController(authService *services.AuthService, userTokenService *serv
 	}
 }
 
+// respondJson is a helper function to send JSON responses
+// It will encapsulate the response in a standard format
 func respondJson(c *gin.Context, httpStatus int, status string, message string, data any) {
 	c.JSON(httpStatus, gin.H{
 		"status":  status,
@@ -33,18 +35,48 @@ func respondJson(c *gin.Context, httpStatus int, status string, message string, 
 	})
 }
 
+// createUserToken is a helper function to create a user token in the database
+// It will be used in login, refresh to add new record in the UserToken collection
+func (ac *AuthController) createUserToken(c *gin.Context, user *models.User, token string, oldToken string) (string, error) {
+	if oldToken != "" {
+		err := ac.UserTokenService.DeleteUserToken(c, oldToken)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Create the user token object
+	userToken := &models.UserToken{
+		UserID:    user.ID,
+		Token:     token,
+		UserAgent: c.Request.UserAgent(),
+		IPAddress: c.ClientIP(),
+		ExpiredAt: time.Now().Add(time.Duration(24*14) * time.Hour),
+		CreatedAt: time.Now(),
+	}
+
+	// Create the user token in the database
+	err := ac.UserTokenService.CreateUserToken(c, userToken)
+	if err != nil {
+		return "", err
+	}
+
+	// Return the user token ID
+	return userToken.ID.Hex(), nil
+}
+
 // LoginHandler godoc
 //
-//		@Summary		Authenticates the user
-//		@Description	Authenticates the user
-//		@Tags			Authentication
-//		@Accept			json
-//		@Produce		json
-//	  @Param			request body	models.LoginRequest	true	"Login Request"
-//		@Success		200			{object}	models.LoginResponse	"User authenticated successfully"
-//		@Failure		400			{string}	string	"Invalid request"
-//		@Failure		401			{string}	string	"Invalid credentials"
-//		@Router			/auth/login [post]
+//			@Summary		Authenticates the user
+//	   @Description	This endpoint authenticates the user by checking the email and password. If the credentials are valid, it generates an access token and a refresh token.
+//			@Tags			Authentication
+//			@Accept			json
+//			@Produce		json
+//		  @Param			request body	models.LoginRequest	true	"Login Request"
+//			@Success		200			{object}	models.LoginResponse	"User authenticated successfully"
+//			@Failure		400			{string}	string	"Invalid request"
+//			@Failure		401			{string}	string	"Invalid credentials"
+//			@Router			/auth/login [post]
 func (ac *AuthController) LoginHandler(c *gin.Context) {
 	// Define the request and response body structs
 	var request models.LoginRequest
@@ -89,6 +121,13 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 		return
 	}
 
+	// Create a user token in the database
+	_, err = ac.createUserToken(c, user, refreshToken, "")
+	if err != nil {
+		respondJson(c, http.StatusInternalServerError, "error", "Failed to create the user token.", nil)
+		return
+	}
+
 	// Encapsulate the response
 	var response models.LoginResponse
 	response.AccessToken = accessToken
@@ -105,7 +144,7 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 // RegisterHandler godoc
 //
 //		@Summary		Registers a new user
-//		@Description	Registers a new user
+//		@Description	This endpoint registers a new user by creating a new user record in the database.
 //		@Tags			Authentication
 //		@Accept			json
 //		@Produce		json
@@ -127,14 +166,14 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	}
 
 	// Get the user by email to check if the user already exists
-	user, err := ac.AuthService.GetUserByEmail(c, request.Email)
+	_, err = ac.AuthService.GetUserByEmail(c, request.Email)
 	if err == nil {
 		respondJson(c, http.StatusConflict, "error", "User already exists with the email.", nil)
 		return
 	}
 
 	// Get the user by username to check if the user already exists
-	user, err = ac.AuthService.GetUserByUsername(c, request.Username)
+	_, err = ac.AuthService.GetUserByUsername(c, request.Username)
 	if err == nil {
 		respondJson(c, http.StatusConflict, "error", "User already exists with the username.", nil)
 		return
@@ -149,7 +188,7 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 
 	// Create the user object
 	request.Password = string(encryptedPassword)
-	user = &models.User{
+	user := &models.User{
 		Email:        request.Email,
 		PasswordHash: request.Password,
 		Username:     request.Username,
@@ -189,34 +228,47 @@ func (ac *AuthController) RefreshHandler(c *gin.Context) {
 	err := c.ShouldBind(&request)
 	if err != nil {
 		respondJson(c, http.StatusBadRequest, "error", "Invalid request. Check refresh token field.", nil)
+		return
 	}
 
 	// Validate the refresh token
 	user_id, err := utils.GetIDFromToken(request.RefreshToken, configs.Config.JWTSecret)
 	if err != nil {
 		respondJson(c, http.StatusUnauthorized, "error", "Invalid refresh token.", nil)
+		return
 	}
 
 	// Get the user by ID
 	user, err := ac.AuthService.GetUserByID(c, user_id)
 	if err != nil {
 		respondJson(c, http.StatusUnauthorized, "error", "Invalid refresh token.", nil)
+		return
 	}
 
 	// Create a new access token and refresh token for the user
 	accessToken, err := utils.CreateAccessToken(user, configs.Config.JWTSecret, 24*7) // 7 days
 	if err != nil {
 		respondJson(c, http.StatusInternalServerError, "error", "Failed to create the access token.", nil)
+		return
 	}
 	refreshToken, err := utils.CreateRefreshToken(user, configs.Config.JWTSecret, 24*14) // 14 days
 	if err != nil {
 		respondJson(c, http.StatusInternalServerError, "error", "Failed to create the refresh token.", nil)
+		return
 	}
 
 	// Update the last login time
 	err = ac.AuthService.UpdateUserLastLogin(c, user.ID.Hex())
 	if err != nil {
 		respondJson(c, http.StatusInternalServerError, "error", "Failed to update the last login time.", nil)
+		return
+	}
+
+	// Create a user token in the database
+	_, err = ac.createUserToken(c, user, refreshToken, request.RefreshToken)
+	if err != nil {
+		respondJson(c, http.StatusInternalServerError, "error", "Failed to create the user token.", nil)
+		return
 	}
 
 	// Encapsulate the response
@@ -243,6 +295,30 @@ func (ac *AuthController) RefreshHandler(c *gin.Context) {
 //	@Failure		500			{string}	string	"Failed to log out the user"
 //	@Router			/auth/logout [post]
 func (ac *AuthController) LogoutHandler(c *gin.Context) {
-	// TBA when we have UserToken schema
-	return
+	// Define the request and response body structs
+	var request models.LogoutRequest
+
+	// Bind the request body to the struct and check if JSON object is valid
+	err := c.ShouldBind(&request)
+	if err != nil {
+		respondJson(c, http.StatusBadRequest, "error", "Invalid request. Check refresh token field.", nil)
+		return
+	}
+
+	// Validate the refresh token
+	_, err = utils.GetIDFromToken(request.RefreshToken, configs.Config.JWTSecret)
+	if err != nil {
+		respondJson(c, http.StatusUnauthorized, "error", "Invalid refresh token.", nil)
+		return
+	}
+
+	// Delete the user token from the database
+	err = ac.UserTokenService.DeleteUserToken(c, request.RefreshToken)
+	if err != nil {
+		respondJson(c, http.StatusInternalServerError, "error", "Failed to log out the user.", nil)
+		return
+	}
+
+	// Send the response
+	respondJson(c, http.StatusOK, "success", "User logged out successfully.", nil)
 }
