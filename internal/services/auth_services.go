@@ -43,7 +43,28 @@ func (as *AuthService) GetUserByID(ctx context.Context, id string) (*models.User
 	return as.userRepository.GetUserByID(ctx, id)
 }
 
+// GetUserByUsername retrieves a user by username
+func (as *AuthService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return as.userRepository.GetUserByUsername(ctx, username)
+}
+
 // CreateAccessToken creates an access token for the user
 func (as *AuthService) CreateAccessToken(user *models.User, secret string, expiry int) (string, error) {
 	return utils.CreateAccessToken(user, secret, expiry)
+}
+
+// CreateRefreshToken creates a refresh token for the user
+func (as *AuthService) CreateRefreshToken(user *models.User, secret string, expiry int) (string, error) {
+	return utils.CreateRefreshToken(user, secret, expiry)
+}
+
+// UpdateUserLastLogin updates the last login time of the user
+func (as *AuthService) UpdateUserLastLogin(ctx context.Context, id string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return as.userRepository.UpdateUserLastLogin(ctx, id)
 }

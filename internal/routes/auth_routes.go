@@ -12,10 +12,12 @@ import (
 
 // NewAuthRouters sets up the routes and the corresponding handlers
 func NewAuthRouters(db *mongo.Database, group *gin.RouterGroup) {
-	// Create a new instance of the user repository
+	// Create a new instance of the repositories
 	ur := repositories.NewUserRepository(db, models.CollectionUsers)
+	utr := repositories.NewUserTokenRepository(db, models.CollectionUserTokens)
 	ac := &controllers.AuthController{
-		AuthService: services.NewAuthService(ur),
+		AuthService:      services.NewAuthService(ur),
+		UserTokenService: services.NewUserTokenService(utr),
 	}
 
 	// Create a new group for the auth routes
@@ -23,5 +25,6 @@ func NewAuthRouters(db *mongo.Database, group *gin.RouterGroup) {
 	{
 		authGroup.POST("/register", ac.RegisterHandler)
 		authGroup.POST("/login", ac.LoginHandler)
+		authGroup.POST("/refresh", ac.RefreshHandler)
 	}
 }
