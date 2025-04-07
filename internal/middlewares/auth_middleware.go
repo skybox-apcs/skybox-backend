@@ -23,9 +23,8 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println("Token:", t[1])
-		fmt.Println("Secret:", secret)
-
+		// fmt.Println("Token:", t[1])
+		// fmt.Println("Secret:", secret)
 		// Validate the token
 		authToken := t[1]
 		authorized, err := utils.IsAuthorized(authToken, secret)
