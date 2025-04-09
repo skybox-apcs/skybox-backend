@@ -116,6 +116,13 @@ func (utr *userTokenRepository) DeleteUserTokensByUserID(ctx context.Context, us
 		return err
 	}
 
-	collection.DeleteMany(ctx, bson.M{"user_id": userIDHex})
+	deleteResult, err := collection.DeleteMany(ctx, bson.M{"user_id": userIDHex})
+	if err != nil {
+		return err
+	}
+	if deleteResult.DeletedCount == 0 {
+		return fmt.Errorf("no tokens found for the provided user ID")
+	}
+
 	return nil
 }
