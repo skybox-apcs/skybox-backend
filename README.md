@@ -24,7 +24,7 @@
 SkyBox is a secure, scalable cloud storage solution inspired by Google Drive and Dropbox, built with Go, AWS, and MongoDB. It offers file storage, sharing, and synchronization across devices.
 
 > [!NOTE]
-> This is the final group project from two courses in VNUHCM - University of Science - CS422 - Software Analysis and Design.
+> This is the final group project of a course in VNUHCM - University of Science - CS422 - Software Analysis and Design.
 
 ## Features ✨
 
