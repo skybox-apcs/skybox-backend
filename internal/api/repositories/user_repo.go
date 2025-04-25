@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"skybox-backend/internal/models"
+	"skybox-backend/internal/api/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

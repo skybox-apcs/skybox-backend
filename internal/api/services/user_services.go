@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"skybox-backend/internal/models"
+	"skybox-backend/internal/api/models"
 )
 
 type UserService struct {

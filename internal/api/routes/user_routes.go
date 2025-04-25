@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"skybox-backend/internal/controllers"
-	"skybox-backend/internal/models"
-	"skybox-backend/internal/repositories"
-	"skybox-backend/internal/services"
+	"skybox-backend/internal/api/controllers"
+	"skybox-backend/internal/api/models"
+	"skybox-backend/internal/api/repositories"
+	"skybox-backend/internal/api/services"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
