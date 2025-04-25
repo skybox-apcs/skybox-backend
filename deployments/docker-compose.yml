@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: ..
+      dockerfile: deployment/api-server.Dockerfile
+    container_name: skybox-api
+    ports:
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
+    env_file:
+      - ../.env
+
+  block-server:
+    build:
+      context: ..
+      dockerfile: deployment/block-server.Dockerfile
+    container_name: skybox-block
+    ports:
+      - "${BLOCK_SERVER_PORT:-8081}:${BLOCK_SERVER_PORT:-8081}"
+    env_file:
+      - ../.env
+    volumes:
+      - ./storage:/storage
