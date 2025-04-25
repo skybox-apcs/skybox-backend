@@ -79,7 +79,7 @@ cd skybox-backend
 
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration: MongoDB URI, server ports, etc.
 ```
 
 3. Install dependencies:
@@ -90,14 +90,30 @@ go mod download
 
 4. Run the application:
 
+You can run either:
+
+- API Server only - handles auth, metadata, and user logic.
+- Block Server only – handles raw file uploads/downloads,
+- Combined Server – runs both in one process (useful for local dev).
+
 ```bash
+# Run API Server
+go run .\cmd\api-server\main.go
+
+# Run Block Server
+go run .\cmd\block-server\main.go
+
+# Run Combined Server
 go run .\cmd\server\main.go
 ```
 
 5. Access the application:
 
 ```bash
+# API Server
 http://localhost:8080
+# Block Server
+http://localhost:8081
 ```
 
 #### Deployment
