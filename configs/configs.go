@@ -9,9 +9,11 @@ import (
 
 type AppConfig struct {
 	// Server Config
-	ServerPort  string
-	ServerHost  string
-	ReleaseMode bool
+	ServerPort      string
+	ServerHost      string
+	BlockServerPort string
+	BlockServerHost string
+	ReleaseMode     bool
 
 	// Database Config
 	MongoURI    string
@@ -38,6 +40,8 @@ func LoadConfig() {
 	// Load the environment variables
 	Config.ServerPort = getEnv("SERVER_PORT", "8080")
 	Config.ServerHost = getEnv("SERVER_HOST", "localhost")
+	Config.BlockServerPort = getEnv("BLOCK_SERVER_PORT", "8081")
+	Config.BlockServerHost = getEnv("BLOCK_SERVER_HOST", "localhost")
 	Config.ReleaseMode = getEnv("GIN_MODE", "debug") == "release"
 	Config.MongoURI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
 	Config.MongoDBName = getEnv("MONGODB_NAME", "test")

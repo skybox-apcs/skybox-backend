@@ -6,10 +6,8 @@ import (
 	"net/http"
 
 	"skybox-backend/configs"
-	"skybox-backend/internal/api/routes"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Server struct encapsulates the HTTP Server
@@ -51,16 +49,22 @@ func (s *Server) SecurityMiddleware() {
 }
 
 // routeMiddleware sets up the routes and the corresponding handlers
-func (s *Server) RouteMiddleware(db *mongo.Database) {
-	s.app = routes.SetupRouter(db, s.app)
+func (s *Server) RouteMiddleware() {
+	fmt.Println("Block Server: To be implemented...")
 }
 
-// globalErrorHandler set up a centralized error handler
 func (s *Server) GlobalErrorHandler() {
 	s.app.Use(func(c *gin.Context) {
 		c.Next()
+
 		if len(c.Errors) > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": c.Errors[0].Error()})
+			err := c.Errors[0]
+			log.Printf("Error: %v", err)
+
+			// Send a generic error response to the client
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Internal Server Error",
+			})
 		}
 	})
 }
@@ -70,7 +74,7 @@ func (s *Server) CorsMiddleware() {
 	s.app.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept,  Authorization")
 		c.Header("Access-Control-Expose-Headers", "Content-Length")
 		c.Header("Access-Control-Allow-Credentials", "true")
 
@@ -84,11 +88,11 @@ func (s *Server) CorsMiddleware() {
 	})
 }
 
-// Start initializes the server and starts listening on the specified port
+// StartServer starts the HTTP server
 func (s *Server) StartServer() {
-	host := configs.Config.ServerHost
-	port := configs.Config.ServerPort
+	host := configs.Config.BlockServerHost
+	port := configs.Config.BlockServerPort
 
-	fmt.Printf("Server is running on %s:%s\n", host, port)
+	fmt.Printf("Block Server is running on %s:%s\n", host, port)
 	log.Fatal(s.app.Run(fmt.Sprintf("%s:%s", host, port)))
 }
