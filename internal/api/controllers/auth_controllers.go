@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"skybox-backend/configs"
-	"skybox-backend/internal/models"
-	"skybox-backend/internal/services"
+	"skybox-backend/internal/api/models"
+	"skybox-backend/internal/api/services"
 	"skybox-backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"

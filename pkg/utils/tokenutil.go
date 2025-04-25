@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"skybox-backend/internal/models"
+	"skybox-backend/internal/api/models"
 
 	"github.com/golang-jwt/jwt/v5"
 )

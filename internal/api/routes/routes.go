@@ -2,8 +2,8 @@ package routes
 
 import (
 	"skybox-backend/configs"
-	"skybox-backend/internal/controllers"
-	"skybox-backend/internal/middlewares"
+	"skybox-backend/internal/api/controllers"
+	"skybox-backend/internal/api/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/files"

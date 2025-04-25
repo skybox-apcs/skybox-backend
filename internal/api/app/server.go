@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"skybox-backend/configs"
-	"skybox-backend/internal/routes"
+	"skybox-backend/internal/api/routes"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"skybox-backend/internal/services"
+	"skybox-backend/internal/api/services"
 
 	"github.com/gin-gonic/gin"
 )

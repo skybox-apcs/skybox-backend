@@ -26,7 +26,7 @@ package main
 import (
 	"skybox-backend/configs"
 	"skybox-backend/docs"
-	"skybox-backend/internal/app"
+	"skybox-backend/internal/api/app"
 )
 
 func main() {
