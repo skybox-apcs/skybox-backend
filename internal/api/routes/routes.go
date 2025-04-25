@@ -3,7 +3,7 @@ package routes
 import (
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/controllers"
-	"skybox-backend/internal/api/middlewares"
+	"skybox-backend/internal/shared/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/files"

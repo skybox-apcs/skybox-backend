@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"skybox-backend/configs"
+	"skybox-backend/internal/blockserver/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,7 +51,7 @@ func (s *Server) SecurityMiddleware() {
 
 // routeMiddleware sets up the routes and the corresponding handlers
 func (s *Server) RouteMiddleware() {
-	fmt.Println("Block Server: To be implemented...")
+	routes.SetupRouter(s.app)
 }
 
 func (s *Server) GlobalErrorHandler() {
