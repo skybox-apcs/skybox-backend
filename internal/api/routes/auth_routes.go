@@ -3,10 +3,10 @@ package routes
 import (
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/controllers"
-	"skybox-backend/internal/api/middlewares"
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/repositories"
 	"skybox-backend/internal/api/services"
+	"skybox-backend/internal/shared/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
