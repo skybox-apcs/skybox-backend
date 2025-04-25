@@ -1,6 +1,8 @@
 package app
 
 import (
+	"skybox-backend/configs"
+
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -18,4 +20,22 @@ func NewApplication() Application {
 
 func (app *Application) CloseDBConnection() {
 	CloseMongoDatabase(app.Mongo)
+}
+
+func StartServer() {
+	// Create a new application
+	application := NewApplication()
+
+	// Setup the DB
+	db := application.Mongo.Database(configs.Config.MongoDBName)
+	defer application.CloseDBConnection()
+
+	// Start the server
+	ginServer := NewServer()
+	ginServer.CorsMiddleware()
+	ginServer.SecurityMiddleware()
+	ginServer.RouteMiddleware(db)
+	ginServer.GlobalErrorHandler()
+
+	ginServer.StartServer()
 }
