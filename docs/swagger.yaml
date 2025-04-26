@@ -1,5 +1,93 @@
-basePath: /api/v1
 definitions:
+  models.CreateFolderRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateFolderResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      owner_id:
+        type: string
+      parent_id:
+        type: string
+    type: object
+  models.File:
+    properties:
+      deleted_at:
+        description: Nullable field for soft delete
+        type: string
+      extension:
+        type: string
+      file_name:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      mime_type:
+        type: string
+      owner_id:
+        description: The owner of the file
+        type: string
+      parent_folder_id:
+        description: The parent folder ID, if any
+        type: string
+      size:
+        type: integer
+      total_chunks:
+        description: ChunkList   []Chunk `bson:"chunk_list" json:"chunk_list"`
+        type: integer
+    type: object
+  models.Folder:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        description: Nullable field for soft delete
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      name:
+        type: string
+      owner_id:
+        description: The owner of the folder
+        type: string
+      parent_folder_id:
+        description: The parent folder ID, if any
+        type: string
+      stats:
+        $ref: '#/definitions/models.FolderStat'
+      updated_at:
+        type: string
+    type: object
+  models.FolderStat:
+    properties:
+      total_files:
+        type: integer
+      total_folders:
+        type: integer
+      total_size:
+        type: integer
+    type: object
+  models.GetFolderContentsResponse:
+    properties:
+      file_list:
+        items:
+          $ref: '#/definitions/models.File'
+        type: array
+      folder_list:
+        items:
+          $ref: '#/definitions/models.Folder'
+        type: array
+    type: object
   models.LoginRequest:
     properties:
       email:
@@ -23,6 +111,9 @@ definitions:
         type: string
       refresh_token:
         description: Refresh token
+        type: string
+      root_folder_id:
+        description: Root folder ID
         type: string
       username:
         description: Username
@@ -82,28 +173,16 @@ definitions:
         type: string
       last_password_change_at:
         type: string
+      root_folder_id:
+        description: The root folder ID for the user
+        type: string
       updated_at:
         type: string
       username:
         type: string
     type: object
-externalDocs:
-  description: OpenAPI Documentation
-  url: https://swagger.io/resources/open-api/
-host: localhost:8080
 info:
-  contact:
-    email: support@skybox.io
-    name: Skybox Support
-    url: http://skybox.io/support
-  description: Skybox is a cloud-based file storage provider similar to Google Drive
-    and Dropbox. It allows users to securely store, manage, and retrieve their files.
-  license:
-    name: GNU General Public License v3.0
-    url: https://www.gnu.org/licenses/gpl-3.0.html
-  termsOfService: http://swagger.io/terms/
-  title: Skybox API
-  version: "1.0"
+  contact: {}
 paths:
   /auth/login:
     post:
@@ -230,6 +309,82 @@ paths:
       summary: Registers a new user
       tags:
       - Authentication
+  /folders/{folderId}/contents:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all folders and files inside the specified parent folder
+      parameters:
+      - description: Folder ID
+        in: path
+        maxLength: 24
+        minLength: 24
+        name: folderId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetFolderContentsResponse'
+        "400":
+          description: Invalid request.
+          schema:
+            type: string
+        "404":
+          description: Folder not found.
+          schema:
+            type: string
+        "500":
+          description: Internal server error.
+          schema:
+            type: string
+      summary: Get contents of a folder (folders and files)
+      tags:
+      - Folders
+  /folders/{folderId}/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new folder in the specified parent folder
+      parameters:
+      - description: Folder ID
+        in: path
+        maxLength: 24
+        minLength: 24
+        name: folderId
+        required: true
+        type: string
+      - description: Create Folder Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateFolderResponse'
+        "400":
+          description: Invalid request.
+          schema:
+            type: string
+        "404":
+          description: Folder not found.
+          schema:
+            type: string
+        "500":
+          description: Internal server error.
+          schema:
+            type: string
+      summary: Create a new folder in prompted folder id
+      tags:
+      - Folders
   /hello:
     get:
       consumes:
@@ -266,10 +421,4 @@ paths:
       summary: Returns the user information
       tags:
       - User
-securityDefinitions:
-  BearerAuth:
-    description: Use "Bearer {your_token}" to authenticate requests.
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

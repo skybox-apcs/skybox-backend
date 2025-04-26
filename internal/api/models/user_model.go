@@ -19,6 +19,7 @@ type User struct {
 	PasswordHash         string             `bson:"password_hash" json:"-"`
 	LastLoginAt          time.Time          `bson:"last_login_at" json:"last_login_at"`
 	LastPasswordChangeAt time.Time          `bson:"last_password_change_at" json:"last_password_change_at"`
+	RootFolderID         primitive.ObjectID `bson:"root_folder_id" json:"root_folder_id"` // The root folder ID for the user
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt            time.Time          `bson:"updated_at" json:"updated_at"`
 }

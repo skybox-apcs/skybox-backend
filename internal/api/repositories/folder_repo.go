@@ -82,17 +82,13 @@ func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, fol
 }
 
 // GetFolderContents retrieves the contents of a folder by ID
-func (fr *folderRepository) GetFolderContents(ctx context.Context, folderID string) ([]*any, error) {
+func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID string) ([]*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 
 	// Check if folderID is a valid ObjectID
-	var folderIDHex = primitive.NilObjectID
-	var err error
-	if folderID != "" {
-		folderIDHex, err = primitive.ObjectIDFromHex(folderID)
-		if err != nil {
-			return nil, err
-		}
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get all folder contents where parent_folder_id matches the folderID
@@ -102,19 +98,47 @@ func (fr *folderRepository) GetFolderContents(ctx context.Context, folderID stri
 	}
 	defer cursor.Close(ctx)
 
-	// TODO)): Get file too
-
-	// Iterate through the cursor and decode each document into a slice of any type
-	var contents []*any
+	// Iterate through the cursor and decode each document into a slice of Folder
+	var contents []*models.Folder
 	for cursor.Next(ctx) {
-		var content any
-		if err := cursor.Decode(&content); err != nil {
+		var folder models.Folder
+		if err := cursor.Decode(&folder); err != nil {
 			return nil, err
 		}
-		contents = append(contents, &content)
+		contents = append(contents, &folder)
 	}
 
 	return contents, nil
+}
+
+// GetFileListInFolder retrieves the files in a folder by ID
+func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
+	collection := fr.database.Collection(models.CollectionFiles)
+
+	// Check if folderID is a valid ObjectID
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all files in the folder where parent_folder_id matches the folderID
+	cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": folderIDHex, "is_deleted": false})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Iterate through the cursor and decode each document into a slice of File (or any other type)
+	var files []*models.File
+	for cursor.Next(ctx) {
+		var file models.File // Replace with actual file type
+		if err := cursor.Decode(&file); err != nil {
+			return nil, err
+		}
+		files = append(files, &file)
+	}
+
+	return files, nil
 }
 
 func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {

@@ -14,5 +14,6 @@ type CreateFolderResponse struct {
 type GetFolderContentsRequest struct{}
 
 type GetFolderContentsResponse struct {
-	Contents []any `json:"contents"`
+	FolderList []*Folder `json:"folder_list"`
+	FileList   []*File   `json:"file_list"`
 }

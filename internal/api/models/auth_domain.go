@@ -15,11 +15,12 @@ type RegisterResponse struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"access_token"`  // Access token
-	RefreshToken string `json:"refresh_token"` // Refresh token
-	ID           string `json:"id"`            // User ID
-	Username     string `json:"username"`      // Username
-	Email        string `json:"email"`         // User email
+	AccessToken  string `json:"access_token"`   // Access token
+	RefreshToken string `json:"refresh_token"`  // Refresh token
+	ID           string `json:"id"`             // User ID
+	Username     string `json:"username"`       // Username
+	Email        string `json:"email"`          // User email
+	RootFolderID string `json:"root_folder_id"` // Root folder ID
 }
 
 type RefreshRequest struct {

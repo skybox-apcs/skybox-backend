@@ -10,6 +10,7 @@ import (
 	"skybox-backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -129,12 +130,14 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 	}
 
 	// Encapsulate the response
-	var response models.LoginResponse
-	response.AccessToken = accessToken
-	response.RefreshToken = refreshToken
-	response.ID = user.ID.Hex()
-	response.Username = user.Username
-	response.Email = user.Email
+	response := models.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ID:           user.ID.Hex(),
+		Username:     user.Username,
+		Email:        user.Email,
+		RootFolderID: user.RootFolderID.Hex(),
+	}
 
 	// Send the response
 	respondJson(c, http.StatusOK, "success", "User authenticated successfully.", response)
@@ -192,6 +195,7 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 		Email:        request.Email,
 		PasswordHash: request.Password,
 		Username:     request.Username,
+		RootFolderID: primitive.NilObjectID, // Set to nil for now, will be set later
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
