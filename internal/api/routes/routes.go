@@ -39,6 +39,9 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 	{
 		// Setup the user routes
 		NewUserRouters(db, v1)
+
+		// Setup the folder routes
+		NewFolderRouters(db, v1)
 	}
 
 	return gin
