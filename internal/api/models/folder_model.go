@@ -25,6 +25,7 @@ type Folder struct {
 	Name           string             `bson:"name" json:"name"`
 	IsDeleted      bool               `bson:"is_deleted" json:"is_deleted"`
 	Stats          FolderStat         `bson:"stats" json:"stats"`
+	IsRoot         bool               `bson:"is_root" json:"is_root"` // Indicates if this is a root folder
 
 	CreatedAt time.Time  `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `bson:"updated_at" json:"updated_at"`

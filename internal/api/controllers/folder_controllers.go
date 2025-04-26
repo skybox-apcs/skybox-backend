@@ -23,6 +23,26 @@ func NewFolderController(folderService *services.FolderService) *FolderControlle
 	}
 }
 
+// GetFolderHandler godoc
+func (fc *FolderController) GetFolderHandler(c *gin.Context) {
+	// Get the folder ID from the request parameters
+	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	// Get the folder by ID from the service
+	folder, err := fc.FolderService.GetFolderByID(c, folderId)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder. Error: "+err.Error(), nil)
+		return
+	}
+
+	// Send the response
+	shared.RespondJson(c, http.StatusOK, "success", "Folder retrieved successfully.", folder)
+}
+
 // CreateFolderHandler godoc
 //
 // @Summary Create a new folder in prompted folder id
@@ -75,9 +95,11 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 		OwnerID:        ownerIdHex,
 		ParentFolderID: parentFolderIdHex,
 		IsDeleted:      false,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		DeletedAt:      nil,
+		IsRoot:         false,
+
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: nil,
 	}
 
 	// Create the folder in the database
@@ -153,6 +175,17 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 }
 
 // DeleteFolderHandler godoc
+//
+// @Summary Delete a folder
+// @Description Delete a folder by its ID
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Success 200 {string} string "Folder deleted successfully."
+// @Failure 400 {string} string "Invalid request."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId} [delete]
 func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -164,7 +197,7 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	// Delete the folder using the service
 	err := fc.FolderService.DeleteFolder(c, folderId)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder. Error: "+err.Error(), nil)
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder.", nil)
 		return
 	}
 

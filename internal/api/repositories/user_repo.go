@@ -38,12 +38,14 @@ func (ur *userRepository) CreateUser(ctx context.Context, user *models.User) err
 	// Create the root folder for the user
 	rootFolder := &models.Folder{
 		OwnerID:        result.InsertedID.(primitive.ObjectID),
+		ParentFolderID: primitive.NilObjectID,
 		Name:           "Root",
 		IsDeleted:      false,
-		ParentFolderID: primitive.NilObjectID,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		DeletedAt:      nil,
+		IsRoot:         true,
+
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: nil,
 	}
 
 	// Insert the root folder into the database
