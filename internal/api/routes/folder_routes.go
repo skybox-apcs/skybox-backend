@@ -21,7 +21,8 @@ func NewFolderRouters(db *mongo.Database, group *gin.RouterGroup) {
 	// Create a new group for the folder routes
 	folderGroup := group.Group("/folders")
 	{
-		folderGroup.GET("/:folderId/contents", fc.GetContents)
-		folderGroup.POST("/:folderId/create", fc.CreateFolder)
+		folderGroup.GET("/:folderId/contents", fc.GetContentsHandler)
+		folderGroup.POST("/:folderId/create", fc.CreateFolderHandler)
+		folderGroup.DELETE("/:folderId", fc.DeleteFolderHandler)
 	}
 }

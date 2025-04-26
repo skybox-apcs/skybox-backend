@@ -9,16 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "Skybox Support",
-            "url": "http://skybox.io/support",
-            "email": "support@skybox.io"
-        },
-        "license": {
-            "name": "GNU General Public License v3.0",
-            "url": "https://www.gnu.org/licenses/gpl-3.0.html"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -209,6 +200,119 @@ const docTemplate = `{
                 }
             }
         },
+        "/folders/{folderId}/contents": {
+            "get": {
+                "description": "Retrieve all folders and files inside the specified parent folder",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Folders"
+                ],
+                "summary": "Get contents of a folder (folders and files)",
+                "parameters": [
+                    {
+                        "maxLength": 24,
+                        "minLength": 24,
+                        "type": "string",
+                        "description": "Folder ID",
+                        "name": "folderId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFolderContentsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Folder not found.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/folders/{folderId}/create": {
+            "post": {
+                "description": "Create a new folder in the specified parent folder",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Folders"
+                ],
+                "summary": "Create a new folder in prompted folder id",
+                "parameters": [
+                    {
+                        "maxLength": 24,
+                        "minLength": 24,
+                        "type": "string",
+                        "description": "Folder ID",
+                        "name": "folderId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Folder Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateFolderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateFolderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Folder not found.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/hello": {
             "get": {
                 "description": "Returns a hello world message",
@@ -268,6 +372,139 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.CreateFolderRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateFolderResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.File": {
+            "type": "object",
+            "properties": {
+                "deleted_at": {
+                    "description": "Nullable field for soft delete",
+                    "type": "string"
+                },
+                "extension": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "The owner of the file",
+                    "type": "string"
+                },
+                "parent_folder_id": {
+                    "description": "The parent folder ID, if any",
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "total_chunks": {
+                    "description": "ChunkList   []Chunk ` + "`" + `bson:\"chunk_list\" json:\"chunk_list\"` + "`" + `",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Folder": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "description": "Nullable field for soft delete",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "The owner of the folder",
+                    "type": "string"
+                },
+                "parent_folder_id": {
+                    "description": "The parent folder ID, if any",
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/models.FolderStat"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FolderStat": {
+            "type": "object",
+            "properties": {
+                "total_files": {
+                    "type": "integer"
+                },
+                "total_folders": {
+                    "type": "integer"
+                },
+                "total_size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.GetFolderContentsResponse": {
+            "type": "object",
+            "properties": {
+                "file_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.File"
+                    }
+                },
+                "folder_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Folder"
+                    }
+                }
+            }
+        },
         "models.LoginRequest": {
             "type": "object",
             "required": [
@@ -300,6 +537,10 @@ const docTemplate = `{
                 },
                 "refresh_token": {
                     "description": "Refresh token",
+                    "type": "string"
+                },
+                "root_folder_id": {
+                    "description": "Root folder ID",
                     "type": "string"
                 },
                 "username": {
@@ -385,6 +626,10 @@ const docTemplate = `{
                 "last_password_change_at": {
                     "type": "string"
                 },
+                "root_folder_id": {
+                    "description": "The root folder ID for the user",
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -393,29 +638,17 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Use \"Bearer {your_token}\" to authenticate requests.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
-    },
-    "externalDocs": {
-        "description": "OpenAPI Documentation",
-        "url": "https://swagger.io/resources/open-api/"
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Skybox API",
-	Description:      "Skybox is a cloud-based file storage provider similar to Google Drive and Dropbox. It allows users to securely store, manage, and retrieve their files.",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

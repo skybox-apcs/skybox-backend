@@ -39,11 +39,18 @@ func (fr *FolderService) GetFolderParentIDByFolderID(ctx context.Context, folder
 	return fr.folderRepository.GetFolderParentIDByFolderID(ctx, folderID)
 }
 
-func (fr *FolderService) GetFolderContents(ctx context.Context, id string) ([]*any, error) {
+func (fr *FolderService) GetFolderListInFolder(ctx context.Context, id string) ([]*models.Folder, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return fr.folderRepository.GetFolderContents(ctx, id)
+	return fr.folderRepository.GetFolderListInFolder(ctx, id)
+}
+
+func (fr *FolderService) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fr.folderRepository.GetFileListInFolder(ctx, folderID)
 }
 
 func (fr *FolderService) DeleteFolder(ctx context.Context, id string) error {

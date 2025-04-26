@@ -27,8 +27,34 @@ func NewUserRepository(db *mongo.Database, collection string) *userRepository {
 // CreateUser creates a new user
 func (ur *userRepository) CreateUser(ctx context.Context, user *models.User) error {
 	collection := ur.database.Collection(ur.collection)
+	folderCollection := ur.database.Collection(models.CollectionFolders)
 
-	_, err := collection.InsertOne(ctx, user)
+	// Create the user in the database
+	result, err := collection.InsertOne(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	// Create the root folder for the user
+	rootFolder := &models.Folder{
+		OwnerID:        result.InsertedID.(primitive.ObjectID),
+		Name:           "Root",
+		IsDeleted:      false,
+		ParentFolderID: primitive.NilObjectID,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		DeletedAt:      nil,
+	}
+
+	// Insert the root folder into the database
+	folderResult, err := folderCollection.InsertOne(ctx, rootFolder)
+	if err != nil {
+		return err
+	}
+
+	// Update the user's root folder ID
+	user.RootFolderID = folderResult.InsertedID.(primitive.ObjectID)
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": result.InsertedID}, bson.M{"$set": bson.M{"root_folder_id": user.RootFolderID}})
 
 	return err
 }

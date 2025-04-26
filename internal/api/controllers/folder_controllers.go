@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,7 +23,21 @@ func NewFolderController(folderService *services.FolderService) *FolderControlle
 	}
 }
 
-func (fc *FolderController) CreateFolder(c *gin.Context) {
+// CreateFolderHandler godoc
+//
+// @Summary Create a new folder in prompted folder id
+// @Description Create a new folder in the specified parent folder
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Param request body models.CreateFolderRequest true "Create Folder Request"
+// @Success 201 {object} models.CreateFolderResponse
+// @Failure 400 {string} string "Invalid request.
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId}/create [post]
+func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	// Defune the request body structure
 	var request models.CreateFolderRequest
 
@@ -35,30 +48,24 @@ func (fc *FolderController) CreateFolder(c *gin.Context) {
 		return
 	}
 
-	// Get the folder parent folder ID from the request
-	var parentFolderIdHex primitive.ObjectID = primitive.NilObjectID
 	folderId := c.Param("folderId")
-	if folderId != "" {
-		var parentFolderId string = ""
-		parentFolderId, err = fc.FolderService.GetFolderParentIDByFolderID(c, folderId)
-		if err != nil {
-			shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get parent folder ID.: Error: "+err.Error(), nil)
-			return
-		}
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
 
-		// Cast the parent folder ID to ObjectID
-		parentFolderIdHex, err = primitive.ObjectIDFromHex(parentFolderId)
-		if err != nil {
-			shared.RespondJson(c, http.StatusInternalServerError, "error", "Invalid parent folder ID. Error: "+err.Error(), nil)
-			return
-		}
+	// Cast the parent folder ID to ObjectID
+	parentFolderIdHex, err := primitive.ObjectIDFromHex(folderId)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Invalid parent folder ID. Error: "+err.Error(), nil)
+		return
 	}
 
 	// Cast the owner ID to ObjectID
 	// c.Set("x-user-id", userId)
 	ownerIdHex, err := primitive.ObjectIDFromHex(c.GetString("x-user-id"))
 	if err != nil {
-		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid owner ID.", nil)
+		shared.RespondJson(c, http.StatusNotFound, "error", "Invalid owner ID.", nil)
 		return
 	}
 
@@ -92,20 +99,75 @@ func (fc *FolderController) CreateFolder(c *gin.Context) {
 	shared.RespondJson(c, http.StatusCreated, "success", "Folder created successfully.", response)
 }
 
-// GetContents retrieves the contents of a folder
-func (fc *FolderController) GetContents(c *gin.Context) {
+// GetFolderContentsHandler godoc
+//
+// @Summary Get contents of a folder (folders and files)
+// @Description Retrieve all folders and files inside the specified parent folder
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Success 200 {object} models.GetFolderContentsResponse
+// @Failure 400 {string} string "Invalid request."
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId}/contents [get]
+func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
 
-	// Get the folder contents from the service
-	contents, err := fc.FolderService.GetFolderContents(c, folderId)
+	// Get the folder list from the service
+	folderList, err := fc.FolderService.GetFolderListInFolder(c, folderId)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder contents. Error: "+err.Error(), nil)
 		return
 	}
 
-	fmt.Println("Folder contents retrieved successfully:", contents)
+	// Get the file list from the service
+	fileList, err := fc.FolderService.GetFileListInFolder(c, folderId)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get file list. Error: "+err.Error(), nil)
+		return
+	}
+
+	// Check if folderList and fileList are nil and initialize them to empty slices
+	if folderList == nil {
+		folderList = []*models.Folder{}
+	}
+	if fileList == nil {
+		fileList = []*models.File{}
+	}
+
+	// Create the response object
+	contents := models.GetFolderContentsResponse{
+		FolderList: folderList,
+		FileList:   fileList,
+	}
 
 	// Send the response
 	shared.RespondJson(c, http.StatusOK, "success", "Folder contents retrieved successfully.", contents)
+}
+
+// DeleteFolderHandler godoc
+func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
+	// Get the folder ID from the request parameters
+	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	// Delete the folder using the service
+	err := fc.FolderService.DeleteFolder(c, folderId)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder. Error: "+err.Error(), nil)
+		return
+	}
+
+	// Send a success response
+	shared.RespondJson(c, http.StatusOK, "success", "Folder deleted successfully.", nil)
 }
