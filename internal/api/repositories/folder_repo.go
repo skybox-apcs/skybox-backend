@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"skybox-backend/internal/api/models"
@@ -147,6 +148,17 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
+	}
+
+	// Check if the folder is not root
+	folder, err := fr.GetFolderByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Folder content: ", folder)
+	if folder.IsRoot {
+		return fmt.Errorf("cannot delete root folder")
 	}
 
 	// Soft delete the folder by setting IsDeleted to true and updating DeletedAt timestamp
