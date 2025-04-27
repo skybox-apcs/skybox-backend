@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"path/filepath"
+	"sync"
 	"time"
 
 	// "skybox-backend/configs"
@@ -154,16 +155,27 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 
 	// Get the folder list from the service
 	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
-	folderList, err := fc.FolderService.GetFolderListInFolder(c, folderId, ownerIdHex)
-	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder contents. Error: "+err.Error(), nil)
-		return
-	}
+	var folderList []*models.Folder
+	var fileList []*models.File
+	var folderErr, fileErr error
 
-	// Get the file list from the service
-	fileList, err := fc.FolderService.GetFileListInFolder(c, folderId, ownerIdHex)
-	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get file list. Error: "+err.Error(), nil)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		folderList, folderErr = fc.FolderService.GetFolderListInFolder(c, folderId, ownerIdHex)
+	}()
+
+	go func() {
+		defer wg.Done()
+		fileList, fileErr = fc.FolderService.GetFileListInFolder(c, folderId, ownerIdHex)
+	}()
+
+	wg.Wait()
+
+	if folderErr != nil || fileErr != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder contents. Error: "+folderErr.Error(), nil)
 		return
 	}
 
