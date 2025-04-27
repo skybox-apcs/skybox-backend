@@ -37,7 +37,9 @@ type FolderRepository interface {
 	GetFolderByID(ctx context.Context, id string) (*Folder, error)
 	GetFolderParentIDByFolderID(ctx context.Context, folderID string) (string, error)
 	GetFolderListInFolder(ctx context.Context, folderID string) ([]*Folder, error)
+	GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*FolderResponse, error)
 	GetFileListInFolder(ctx context.Context, folderID string) ([]*File, error)
+	GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*FileResponse, error)
 	DeleteFolder(ctx context.Context, id string) error
 	RenameFolder(ctx context.Context, id string, newName string) error
 	MoveFolder(ctx context.Context, id string, newParentID string) error

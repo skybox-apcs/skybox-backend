@@ -153,8 +153,8 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	}
 
 	// Get the folder list from the service
-	var folderList []*models.Folder
-	var fileList []*models.File
+	var folderList []*models.FolderResponse
+	var fileList []*models.FileResponse
 	var folderErr, fileErr error
 
 	wg := sync.WaitGroup{}
@@ -162,27 +162,27 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 
 	go func() {
 		defer wg.Done()
-		folderList, folderErr = fc.FolderService.GetFolderListInFolder(c, folderId)
+		folderList, folderErr = fc.FolderService.GetFolderResponseListInFolder(c, folderId)
 	}()
 
 	go func() {
 		defer wg.Done()
-		fileList, fileErr = fc.FolderService.GetFileListInFolder(c, folderId)
+		fileList, fileErr = fc.FolderService.GetFileResponseListInFolder(c, folderId)
 	}()
 
 	wg.Wait()
 
 	if folderErr != nil || fileErr != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder contents. Error: "+folderErr.Error(), nil)
+		shared.RespondJson(c, http.StatusNotFound, "error", "Failed to get folder contents. Error: "+folderErr.Error(), nil)
 		return
 	}
 
 	// Check if folderList and fileList are nil and initialize them to empty slices
 	if folderList == nil {
-		folderList = []*models.Folder{}
+		folderList = []*models.FolderResponse{}
 	}
 	if fileList == nil {
-		fileList = []*models.File{}
+		fileList = []*models.FileResponse{}
 	}
 
 	// Create the response object
@@ -352,8 +352,10 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 		return
 	}
 
-	// Cast the owner ID to ObjectID
+	// Get information from the request context
 	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
+	ownerUsername := c.MustGet("x-username").(string)
+	ownerEmail := c.MustGet("x-email").(string)
 
 	// Get the file extension from the file name
 	fileExtension := filepath.Ext(request.FileName)
@@ -382,8 +384,9 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 	response := &models.UploadFileMetadataResponse{
 		File: models.FileResponse{
 			ID:             fileMetadata.ID.Hex(),
-			OwnerID:        fileMetadata.OwnerID.Hex(),
 			ParentFolderID: fileMetadata.ParentFolderID.Hex(),
+			OwnerUsername:  ownerUsername,
+			OwnerEmail:     ownerEmail,
 			Name:           fileMetadata.FileName,
 			MimeType:       fileMetadata.MimeType,
 			Size:           fileMetadata.Size,

@@ -89,6 +89,36 @@ func (ur *userRepository) GetUserByID(ctx context.Context, id string) (*models.U
 	return user, err
 }
 
+// GetUsersByIDs retrieves users by their IDs
+func (ur *userRepository) GetUsersByIDs(ctx context.Context, ids []string) ([]*models.User, error) {
+	collection := ur.database.Collection(ur.collection)
+
+	// Convert string IDs to ObjectIDs
+	objectIDs := make([]primitive.ObjectID, len(ids))
+	for i, id := range ids {
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+		objectIDs[i] = objectID
+	}
+
+	// Query users with IDs in the list
+	cursor, err := collection.Find(ctx, bson.M{"_id": bson.M{"$in": objectIDs}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Decode the results into a slice of users
+	var users []*models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 // GetUserByUsername retrieves a user by username
 func (ur *userRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	collection := ur.database.Collection(ur.collection)

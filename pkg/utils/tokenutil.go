@@ -16,9 +16,10 @@ func CreateAccessToken(user *models.User, secret string, expiry int) (string, er
 
 	// Create the claims
 	claims := jwt.MapClaims{
-		"ID":    user.ID,
-		"Email": user.Email,
-		"exp":   exp,
+		"ID":       user.ID,
+		"Email":    user.Email,
+		"Username": user.Username,
+		"exp":      exp,
 	}
 
 	// Create the token
@@ -76,8 +77,8 @@ func IsAuthorized(requestToken string, secret string) (bool, error) {
 	return token.Valid, nil
 }
 
-// GetIDFromToken gets the ID from the token
-func GetIDFromToken(requestToken string, secret string) (string, error) {
+// GetKeyFromToken gets the [Key] value from the token
+func GetKeyFromToken(key string, requestToken string, secret string) (string, error) {
 	// Parse the token
 	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -97,5 +98,5 @@ func GetIDFromToken(requestToken string, secret string) (string, error) {
 		return "", fmt.Errorf("error while getting claims from token")
 	}
 
-	return claims["ID"].(string), nil
+	return claims[key].(string), nil
 }

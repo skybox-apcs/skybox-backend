@@ -22,3 +22,10 @@ func (us *UserService) GetUserByID(ctx context.Context, id string) (*models.User
 
 	return us.userRepository.GetUserByID(ctx, id)
 }
+
+func (us *UserService) GetUsersByIDs(ctx context.Context, ids []string) ([]*models.User, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.userRepository.GetUsersByIDs(ctx, ids)
+}
