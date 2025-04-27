@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
@@ -17,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // MockFolderRepository mocks the FolderService for testing
@@ -411,4 +413,389 @@ func TestRenameFolder_OtherUserFolder(t *testing.T) {
 	// Assert response
 	assert.Equal(t, http.StatusNotFound, rr.Code)
 
+}
+
+func TestDeleteFolder_RootFolder(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.DELETE("/:folderId", folderController.DeleteFolderHandler)
+	}
+
+	// Mock root folder ID
+	mockRootFolderID := "root_folder_id_123"
+
+	// Mock DeleteFolder to return an error for root folder
+	mockFolderRepo.On("DeleteFolder", mock.Anything, mockRootFolderID).Return(fmt.Errorf("cannot delete root folder"))
+
+	// Create request
+	req, _ := http.NewRequest("DELETE", "/folders/"+mockRootFolderID, nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestDeleteFolder_OtherUserFolder(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.DELETE("/:folderId", folderController.DeleteFolderHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := "folder_id_123"
+
+	// Mock DeleteFolder to return an error for other user's folder
+	mockFolderRepo.On("DeleteFolder", mock.Anything, mockFolderID).Return(fmt.Errorf("folder not found"))
+
+	// Create request
+	req, _ := http.NewRequest("DELETE", "/folders/"+mockFolderID, nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestDeleteFolder_Success(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.DELETE("/:folderId", folderController.DeleteFolderHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := "folder_id_123"
+
+	// Mock DeleteFolder to succeed
+	mockFolderRepo.On("DeleteFolder", mock.Anything, mockFolderID).Return(nil)
+
+	// Create request
+	req, _ := http.NewRequest("DELETE", "/folders/"+mockFolderID, nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestMoveFolder_Success(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/move", folderController.MoveFolderHandler)
+	}
+
+	// Mock folder ID and new parent ID
+	mockFolderID := "folder_id_123"
+	mockNewParentID := "new_parent_id_456"
+
+	// Mock MoveFolder to succeed
+	mockFolderRepo.On("MoveFolder", mock.Anything, mockFolderID, mockNewParentID).Return(nil)
+
+	// Create request
+	reqBody := map[string]string{
+		"new_parent_id": mockNewParentID,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/move", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+	assert.Equal(t, "Folder moved successfully.", response.Message)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestMoveFolder_RootFolder(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/move", folderController.MoveFolderHandler)
+	}
+
+	// Mock root folder ID and new parent ID
+	mockRootFolderID := "root_folder_id_123"
+	mockNewParentID := "new_parent_id_456"
+
+	// Mock MoveFolder to return an error for root folder
+	mockFolderRepo.On("MoveFolder", mock.Anything, mockRootFolderID, mockNewParentID).Return(fmt.Errorf("cannot move root folder"))
+
+	// Create request
+	reqBody := map[string]string{
+		"new_parent_id": mockNewParentID,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockRootFolderID+"/move", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestMoveFolder_OtherUserFolder(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/move", folderController.MoveFolderHandler)
+	}
+
+	// Mock folder ID and new parent ID
+	mockFolderID := "folder_id_123"
+	mockNewParentID := "new_parent_id_456"
+
+	// Mock MoveFolder to return an error for other user's folder
+	mockFolderRepo.On("MoveFolder", mock.Anything, mockFolderID, mockNewParentID).Return(fmt.Errorf("folder not found"))
+
+	// Create request
+	reqBody := map[string]string{
+		"new_parent_id": mockNewParentID,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/move", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestMoveFolder_InvalidPayload(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, _, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/move", folderController.MoveFolderHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := "folder_id_123"
+
+	// Create request with invalid payload
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/move", bytes.NewBuffer([]byte("{invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+	assert.Equal(t, "Invalid request.", response.Message)
+}
+
+func TestCreateFolder_Success(t *testing.T) {
+	// Mock folder ID and request body
+	mockFolderID := primitive.NewObjectID().Hex()
+	mockFolderName := "New Folder"
+	mockOwnerID := primitive.NewObjectID()
+	mockParentFolderID := primitive.NewObjectID()
+
+	// Mock folder creation request
+	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("x-user-id-hex", mockOwnerID)
+		c.Next()
+	})
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.POST("/:folderId/create", folderController.CreateFolderHandler)
+	}
+
+	// Mock folder creation response
+	mockFolder := &models.Folder{
+		ID:             primitive.NewObjectID(),
+		Name:           mockFolderName,
+		OwnerID:        mockOwnerID,
+		ParentFolderID: mockParentFolderID,
+		IsDeleted:      false,
+		IsRoot:         false,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	// Mock CreateFolder to succeed
+	mockFolderRepo.On("CreateFolder", mock.Anything, mock.AnythingOfType("*models.Folder")).Return(mockFolder, nil)
+
+	// Create request
+	reqBody := map[string]string{
+		"name": mockFolderName,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/folders/"+mockFolderID+"/create", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusCreated, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Data    models.CreateFolderResponse `json:"data"`
+		Message string                      `json:"message"`
+		Status  string                      `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+	assert.Equal(t, "Folder created successfully.", response.Message)
+	assert.Equal(t, mockFolder.ID.Hex(), response.Data.ID)
+	assert.Equal(t, mockFolder.OwnerID.Hex(), response.Data.OwnerID)
+	assert.Equal(t, mockFolderID, response.Data.ParentFolderID)
+	assert.Equal(t, mockFolder.Name, response.Data.Name)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestCreateFolder_InvalidPayload(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, _, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.POST("/:folderId/create", folderController.CreateFolderHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := primitive.NewObjectID().Hex()
+
+	// Create request with invalid payload
+	req, _ := http.NewRequest("POST", "/folders/"+mockFolderID+"/create", bytes.NewBuffer([]byte("{invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+	assert.Equal(t, "Invalid request.", response.Message)
 }
