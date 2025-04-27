@@ -202,7 +202,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}": {
             "get": {
-                "description": "Retrieve a folder metadata gievn its ID. It will return the folder metadata like the folder ID, owner ID, and other metadata.",
+                "description": "Retrieve detailed metadata for a folder by its ID. Includes information such as folder ID, owner ID, name, parent folder ID, and creation timestamps.",
                 "consumes": [
                     "application/json"
                 ],
@@ -212,7 +212,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Get a folder metadata given its ID",
+                "summary": "Get metadata of a specific folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -252,7 +252,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a folder by its ID. This will not delete the folder physically, but mark it as deleted in the database.",
+                "description": "Mark a folder as deleted (move it to the recycle bin). Subfolders and files are not immediately deleted but will also be marked for deletion. After a retention period, they may be permanently deleted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -262,7 +262,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Delete a folder of a given folderId",
+                "summary": "Soft-delete a folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -298,7 +298,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/contents": {
             "get": {
-                "description": "Retrieve all folders and files inside the specified parent folder. Return two separate list of folders and files.",
+                "description": "Retrieve a list of all files and subfolders contained within a specified folder. Useful for browsing the contents of a directory.",
                 "consumes": [
                     "application/json"
                 ],
@@ -308,7 +308,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Get contents of a folder (folders and files)",
+                "summary": "List all files and folders inside a folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -350,7 +350,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/create": {
             "post": {
-                "description": "Create a new folder in the specified parent folder",
+                "description": "Create a new folder inside a given parent folder. If no parent folder ID is provided, the folder will be created at the root level.",
                 "consumes": [
                     "application/json"
                 ],
@@ -360,7 +360,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Create a new folder in prompted folder id",
+                "summary": "Create a new folder inside a specified parent folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -411,7 +411,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/move": {
             "put": {
-                "description": "Move the current folder (:folderId) to the new parent folder which is new_parent_id in the request body.",
+                "description": "Move a folder from its current location to another destination folder. The folder's contents will be moved along with it.",
                 "consumes": [
                     "application/json"
                 ],
@@ -421,7 +421,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Move a folder of given folderId to a new parent folder",
+                "summary": "Move a folder to a new parent folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -472,7 +472,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/rename": {
             "put": {
-                "description": "Rename a folder of a given ID to new name.",
+                "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
                 ],
@@ -482,7 +482,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Rename a folder of a given ID",
+                "summary": "Rename a specific folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -531,7 +531,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Rename a folder of a given ID to new name.",
+                "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
                 ],
@@ -541,7 +541,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Rename a folder of a given ID",
+                "summary": "Rename a specific folder",
                 "parameters": [
                     {
                         "maxLength": 24,
