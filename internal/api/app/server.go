@@ -19,7 +19,6 @@ type Server struct {
 	app *gin.Engine
 }
 
-
 // NewServer creates a new instance of the Server
 func NewServer() *Server {
 	// Set the release mode
@@ -46,13 +45,13 @@ func (s *Server) SecurityMiddleware() {
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		
+
 		// Additional security headers
 		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 		c.Header("X-Permitted-Cross-Domain-Policies", "none")
-		
+
 		c.Next()
 	})
 
@@ -109,29 +108,30 @@ func (s *Server) GlobalErrorHandler() {
 func (s *Server) CorsMiddleware() {
 	s.app.Use(func(c *gin.Context) {
 		// Replace * with specific allowed origins in production
-		allowedOrigins := configs.Config.AllowedOrigins
-		if len(allowedOrigins) == 0 {
-			allowedOrigins = []string{"*"}
-		}
+		// allowedOrigins := configs.Config.AllowedOrigins
+		// if len(allowedOrigins) == 0 {
+		// 	allowedOrigins = []string{"*"}
+		// }
 
-		origin := c.GetHeader("Origin")
-		if origin == "" {
-			origin = "*"
-		}
+		// origin := c.GetHeader("Origin")
+		// if origin == "" {
+		// 	origin = "*"
+		// }
 
-		// Check if the origin is allowed
-		isAllowed := false
-		for _, allowedOrigin := range allowedOrigins {
-			if allowedOrigin == "*" || allowedOrigin == origin {
-				isAllowed = true
-				break
-			}
-		}
+		// // Check if the origin is allowed
+		// isAllowed := false
+		// for _, allowedOrigin := range allowedOrigins {
+		// 	if allowedOrigin == "*" || allowedOrigin == origin {
+		// 		isAllowed = true
+		// 		break
+		// 	}
+		// }
 
-		if isAllowed {
-			c.Header("Access-Control-Allow-Origin", origin)
-		}
+		// if isAllowed {
+		// 	c.Header("Access-Control-Allow-Origin", origin)
+		// }
 
+		c.Header("Access-Control-Allow-Origin", "*") // Replace * with specific allowed origins in production
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With")
 		c.Header("Access-Control-Expose-Headers", "Content-Length")
