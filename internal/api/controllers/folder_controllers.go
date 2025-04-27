@@ -48,8 +48,7 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 		return
 	}
 
-	ownerId := c.MustGet("x-user-id-hex").(primitive.ObjectID) // Get the owner ID from the context
-	folder, err := fc.FolderService.GetFolderByID(c, folderId, ownerId)
+	folder, err := fc.FolderService.GetFolderByID(c, folderId)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder. Error: "+err.Error(), nil)
 		return
@@ -114,7 +113,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	}
 
 	// Create the folder in the database
-	folderResult, err := fc.FolderService.CreateFolder(c, folder, c.MustGet("x-user-id-hex").(primitive.ObjectID))
+	folderResult, err := fc.FolderService.CreateFolder(c, folder)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to create folder.", nil)
 		return
@@ -154,7 +153,6 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	}
 
 	// Get the folder list from the service
-	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
 	var folderList []*models.Folder
 	var fileList []*models.File
 	var folderErr, fileErr error
@@ -164,12 +162,12 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 
 	go func() {
 		defer wg.Done()
-		folderList, folderErr = fc.FolderService.GetFolderListInFolder(c, folderId, ownerIdHex)
+		folderList, folderErr = fc.FolderService.GetFolderListInFolder(c, folderId)
 	}()
 
 	go func() {
 		defer wg.Done()
-		fileList, fileErr = fc.FolderService.GetFileListInFolder(c, folderId, ownerIdHex)
+		fileList, fileErr = fc.FolderService.GetFileListInFolder(c, folderId)
 	}()
 
 	wg.Wait()
@@ -218,8 +216,7 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	}
 
 	// Delete the folder using the service
-	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
-	err := fc.FolderService.DeleteFolder(c, folderId, ownerIdHex)
+	err := fc.FolderService.DeleteFolder(c, folderId)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder.", nil)
 		return
@@ -263,8 +260,7 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 	}
 
 	// Rename the folder using the service
-	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
-	err = fc.FolderService.RenameFolder(c, folderId, request.NewName, ownerIdHex)
+	err = fc.FolderService.RenameFolder(c, folderId, request.NewName)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to rename folder.", nil)
 		return
@@ -307,8 +303,7 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 	}
 
 	// Move the folder using the service
-	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
-	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID, ownerIdHex)
+	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to move folder.", nil)
 		return
