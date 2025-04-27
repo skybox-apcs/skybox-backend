@@ -303,7 +303,7 @@ func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, fol
 				"id":               "$_id",
 				"name":             "$file_name",
 				"owner_id":         "$owner_id",
-				"owner_username":   "$owner_details.username",
+				"owner_user_name":  "$owner_details.username",
 				"owner_email":      "$owner_details.email",
 				"parent_folder_id": "$parent_folder_id",
 				"size":             "$size",
