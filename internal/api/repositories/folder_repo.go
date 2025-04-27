@@ -26,12 +26,13 @@ func NewFolderRepository(db *mongo.Database, collection string) *folderRepositor
 }
 
 // CreateFolder creates a new folder
-func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Folder, userID primitive.ObjectID) (*models.Folder, error) {
+func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Folder) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
+	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
 
 	// Get the folder ID from the parent folder if it exists
 	if folder.ParentFolderID != primitive.NilObjectID {
-		folder, err := fr.GetFolderByID(ctx, folder.ParentFolderID.Hex(), userID)
+		folder, err := fr.GetFolderByID(ctx, folder.ParentFolderID.Hex())
 		if err != nil {
 			return nil, fmt.Errorf("parent folder not found")
 		}
@@ -57,8 +58,9 @@ func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 }
 
 // GetFolderByID retrieves a folder by ID
-func (fr *folderRepository) GetFolderByID(ctx context.Context, id string, userID primitive.ObjectID) (*models.Folder, error) {
+func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
+	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
 
 	folder := &models.Folder{}
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -76,11 +78,11 @@ func (fr *folderRepository) GetFolderByID(ctx context.Context, id string, userID
 
 	// TODO: Implement sharing functionality later
 
-	return folder, fmt.Errorf("folder not found or deleted")
+	return nil, fmt.Errorf("folder not found or deleted")
 }
 
 // GetFolderParentIDByFolderID retrieves the parent folder ID of folder ID
-func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, folderID string, userID primitive.ObjectID) (string, error) {
+func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, folderID string) (string, error) {
 	collection := fr.database.Collection(fr.collection)
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -101,8 +103,14 @@ func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, fol
 }
 
 // GetFolderContents retrieves the contents of a folder by ID
-func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID string, userID primitive.ObjectID) ([]*models.Folder, error) {
+func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID string) ([]*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
+
+	// Get the current folder and check if the user has permission to access the folder
+	_, err := fr.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Check if folderID is a valid ObjectID
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -112,7 +120,7 @@ func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID 
 
 	// TODO: Implement sharing functionality later
 	// Get all folder contents where parent_folder_id matches the folderID
-	cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": folderIDHex, "is_deleted": false, "owner_id": userID})
+	cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": folderIDHex, "is_deleted": false})
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +140,14 @@ func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID 
 }
 
 // GetFileListInFolder retrieves the files in a folder by ID
-func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID string, userId primitive.ObjectID) ([]*models.File, error) {
+func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
 	collection := fr.database.Collection(models.CollectionFiles)
+
+	// Get the current folder and check if the user has permission to access the folder
+	_, err := fr.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Check if folderID is a valid ObjectID
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -143,7 +157,7 @@ func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID st
 
 	// TODO: Implement sharing functionality later
 	// Get all files in the folder where parent_folder_id matches the folderID
-	cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": folderIDHex, "is_deleted": false, "owner_id": userId})
+	cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": folderIDHex, "is_deleted": false})
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +176,7 @@ func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID st
 	return files, nil
 }
 
-func (fr *folderRepository) DeleteFolder(ctx context.Context, id string, userId primitive.ObjectID) error {
+func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -171,7 +185,7 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string, userId 
 	}
 
 	// Check if the folder is not root
-	folder, err := fr.GetFolderByID(ctx, id, userId)
+	folder, err := fr.GetFolderByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -191,7 +205,7 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string, userId 
 	return err
 }
 
-func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName string, userId primitive.ObjectID) error {
+func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -200,7 +214,7 @@ func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName
 	}
 
 	// Check if the folder is not root
-	folder, err := fr.GetFolderByID(ctx, id, userId)
+	folder, err := fr.GetFolderByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -219,8 +233,9 @@ func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName
 	return err
 }
 
-func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParentID string, userId primitive.ObjectID) error {
+func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParentID string) error {
 	collection := fr.database.Collection(fr.collection)
+	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -232,7 +247,7 @@ func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParent
 	}
 
 	// Check if the folder is not root
-	folder, err := fr.GetFolderByID(ctx, id, userId)
+	folder, err := fr.GetFolderByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -240,16 +255,16 @@ func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParent
 		return fmt.Errorf("cannot move root folder")
 	}
 	// TODO: Implement sharing functionality later
-	if folder.OwnerID != userId {
+	if folder.OwnerID != userID {
 		return fmt.Errorf("user does not have permission to move this folder")
 	}
 
 	// Check if the new parent folder ID is valid
-	parentFolder, err := fr.GetFolderByID(ctx, newParentID, userId)
+	parentFolder, err := fr.GetFolderByID(ctx, newParentID)
 	if err != nil {
 		return err
 	}
-	if parentFolder.OwnerID != userId {
+	if parentFolder.OwnerID != userID {
 		return fmt.Errorf("user does not have permission to move this folder to the new parent folder")
 	}
 
