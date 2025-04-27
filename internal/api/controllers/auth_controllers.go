@@ -171,14 +171,14 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	// Get the user by email to check if the user already exists
 	_, err = ac.AuthService.GetUserByEmail(c, request.Email)
 	if err == nil {
-		respondJson(c, http.StatusConflict, "error", "User already exists with the email.", nil)
+		respondJson(c, http.StatusBadRequest, "error", "User already exists with the email.", nil)
 		return
 	}
 
 	// Get the user by username to check if the user already exists
 	_, err = ac.AuthService.GetUserByUsername(c, request.Username)
 	if err == nil {
-		respondJson(c, http.StatusConflict, "error", "User already exists with the username.", nil)
+		respondJson(c, http.StatusBadRequest, "error", "User already exists with the username.", nil)
 		return
 	}
 
