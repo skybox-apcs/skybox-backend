@@ -26,14 +26,14 @@ func NewFileController(fileService *services.FileService) *FileController {
 //
 // @Summary Get file metadata
 // @Description Get file metadata by file ID. The file ID is a unique identifier for the file in the database. The metadata includes information such as the file name, size, type, and creation date.
-// @Tags files
+// @Tags Files
 // @Accept json
 // @Produce json
 // @Param fileId path string true "File ID" example(1234567890abcdef12345678)
 // @Success 200 {object} models.File "File metadata retrieved successfully"
-// @Failure 400 {object} shared.ErrorResponse "Invalid request body"
-// @Failure 404 {object} shared.ErrorResponse "File not found"
-// @Failure 500 {object} shared.ErrorResponse "Internal server error"
+// @Failure 400 {string} string Invalid request body"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
 // @Router /files/{fileId} [get]
 func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
@@ -65,10 +65,10 @@ func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param fileId path string true "File ID" example(1234567890abcdef12345678)
-// @Success 200 {object} models.DeleteFileResponse "File deleted successfully"
-// @Failure 400 {object} shared.ErrorResponse "Invalid request body"
-// @Failure 404 {object} shared.ErrorResponse "File not found"
-// @Failure 500 {object} shared.ErrorResponse "Internal server error"
+// @Success 200 {string} string "File deleted successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
 // @Router /files/{fileId} [delete]
 func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
@@ -96,16 +96,17 @@ func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 //
 // @Summary Rename a file
 // @Description Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.
-// @Tags files
+// @Tags Files
 // @Accept json
 // @Produce json
 // @Param fileId path string true "File ID" example(1234567890abcdef12345678)
 // @Param request body models.RenameFileRequest true "Rename file request"
-// @Success 200 {object} models.RenameFileResponse "File renamed successfully"
-// @Failure 400 {object} shared.ErrorResponse "Invalid request body"
-// @Failure 404 {object} shared.ErrorResponse "File not found"
-// @Failure 500 {object} shared.ErrorResponse "Internal server error"
-// @Router /files/{fileId}/move [post]
+// @Success 200 {string} string "File renamed successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /files/{fileId}/rename [put]
+// @Router /files/{fileId}/rename [patch]
 func (fc *FileController) RenameFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
@@ -141,16 +142,16 @@ func (fc *FileController) RenameFileHandler(c *gin.Context) {
 //
 // @Summary Move a file to a new folder
 // @Description Move a file to a new folder by providing the new parent folder ID.
-// @Tags files
+// @Tags Files
 // @Accept json
 // @Produce json
 // @Param fileId path string true "File ID" example(1234567890abcdef12345678)
 // @Param request body models.MoveFileRequest true "Move file request"
-// @Success 200 {object} models.MoveFileResponse "File moved successfully"
-// @Failure 400 {object} shared.ErrorResponse "Invalid request body"
-// @Failure 404 {object} shared.ErrorResponse "File not found"
-// @Failure 500 {object} shared.ErrorResponse "Internal server error"
-// @Router /files/{fileId}/move [post]
+// @Success 200 {string} string "File moved successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /files/{fileId}/move [put]
 func (fc *FileController) MoveFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
