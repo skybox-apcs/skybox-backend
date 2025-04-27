@@ -26,6 +26,20 @@ func NewFileRepository(db *mongo.Database, collection string) *fileRepository {
 
 func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
+	folderCollection := fr.database.Collection(models.CollectionFolders)
+	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
+
+	// Get the folder
+	var folder models.Folder
+	err := folderCollection.FindOne(ctx, bson.M{"_id": file.ParentFolderID}).Decode(&folder)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the folder belongs to the user
+	if folder.OwnerID != userID {
+		return nil, mongo.ErrNoDocuments
+	}
 
 	// Insert the file metadata into the database
 	result, err := collection.InsertOne(ctx, file)
@@ -41,6 +55,7 @@ func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.F
 
 func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
+	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
 
 	file := &models.File{}
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -49,12 +64,14 @@ func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.F
 	}
 
 	// Find the file by ID and isDeleted := false
-	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false}).Decode(file)
-	if err != nil {
-		return nil, err
+	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false, "user_id": userID}).Decode(file)
+	if err == nil {
+		return file, nil
 	}
+	// TODO: Implement sharing functionality later
+	// If the file is not found, check if it is shared with the user
 
-	return file, nil
+	return nil, err
 }
 
 func (fr *fileRepository) DeleteFile(ctx context.Context, id string) error {
@@ -87,6 +104,12 @@ func (fr *fileRepository) RenameFile(ctx context.Context, id string, newName str
 		return err
 	}
 
+	// Check if the file related to the user (via owner or sharing)
+	_, err = fr.GetFileByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
 	// Rename the file by updating the file_name field
 	_, err = collection.UpdateOne(ctx, bson.M{"_id": idHex}, bson.M{
 		"$set": bson.M{
@@ -105,6 +128,12 @@ func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFold
 	folderCollection := fr.database.Collection(models.CollectionFolders)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	// Check if the file related to the user (via owner or sharing)
+	_, err = fr.GetFileByID(ctx, id)
 	if err != nil {
 		return err
 	}
