@@ -25,8 +25,8 @@ func NewFolderController(folderService *services.FolderService) *FolderControlle
 
 // GetFolderHandler godoc
 //
-// @Summary Get a folder metadata by its ID
-// @Description Retrieve a folder metadata by its ID
+// @Summary Get metadata of a specific folder
+// @Description Retrieve detailed metadata for a folder by its ID. Includes information such as folder ID, owner ID, name, parent folder ID, and creation timestamps.
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -57,8 +57,8 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 
 // CreateFolderHandler godoc
 //
-// @Summary Create a new folder in prompted folder id
-// @Description Create a new folder in the specified parent folder
+// @Summary Create a new folder inside a specified parent folder
+// @Description Create a new folder inside a given parent folder. If no parent folder ID is provided, the folder will be created at the root level.
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -135,8 +135,8 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 
 // GetFolderContentsHandler godoc
 //
-// @Summary Get contents of a folder (folders and files)
-// @Description Retrieve all folders and files inside the specified parent folder
+// @Summary List all files and folders inside a folder
+// @Description Retrieve a list of all files and subfolders contained within a specified folder. Useful for browsing the contents of a directory.
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -188,8 +188,8 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 
 // DeleteFolderHandler godoc
 //
-// @Summary Delete a folder
-// @Description Delete a folder by its ID
+// @Summary Soft-delete a folder
+// @Description Mark a folder as deleted (move it to the recycle bin). Subfolders and files are not immediately deleted but will also be marked for deletion. After a retention period, they may be permanently deleted.
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -219,8 +219,8 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 
 // RenameFolderHandler godoc
 //
-// @Summary Rename a folder of a given ID
-// @Description Rename a folder by its ID
+// @Summary Rename a specific folder
+// @Description Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -263,8 +263,8 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 
 // MoveFolderHandler godoc
 //
-// @Summary Move a folder of given folderId to a new parent folder
-// @Description Move a folder of given folderId to a new parent folder with newParentId
+// @Summary Move a folder to a new parent folder
+// @Description Move a folder from its current location to another destination folder. The folder's contents will be moved along with it.
 // @Tags Folders
 // @Accept json
 // @Produce json
