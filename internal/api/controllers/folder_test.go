@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // MockFolderRepository mocks the FolderService for testing
@@ -158,30 +157,30 @@ func TestFetchRootFolderContents(t *testing.T) {
 	mockBearerToken := "Bearer mock_token"
 
 	// Mock folder contents
-	mockFolders := []*models.Folder{
+	mockFolders := []*models.FolderResponse{
 		{
-			ID:   primitive.NewObjectID(),
+			ID:   "0123456789abcdef12345678",
 			Name: "Folder 1",
 		},
 		{
-			ID:   primitive.NewObjectID(),
+			ID:   "abcdef012345678912345678",
 			Name: "Folder 2",
 		},
 	}
-	mockFiles := []*models.File{
+	mockFiles := []*models.FileResponse{
 		{
-			ID:       primitive.NewObjectID(),
-			FileName: "File 1",
+			ID:   "0123456789abcdef12345679",
+			Name: "File 1",
 		},
 		{
-			ID:       primitive.NewObjectID(),
-			FileName: "File 2",
+			ID:   "abcdef012345678912345679",
+			Name: "File 2",
 		},
 	}
 
 	// Mock GetFolderListInFolder and GetFileListInFolder
-	mockFolderRepo.On("GetFolderListInFolder", mock.Anything, mockRootFolderID).Return(mockFolders, nil)
-	mockFolderRepo.On("GetFileListInFolder", mock.Anything, mockRootFolderID).Return(mockFiles, nil)
+	mockFolderRepo.On("GetFolderResponseListInFolder", mock.Anything, mockRootFolderID).Return(mockFolders, nil)
+	mockFolderRepo.On("GetFileResponseListInFolder", mock.Anything, mockRootFolderID).Return(mockFiles, nil)
 
 	// Create request
 	req, _ := http.NewRequest("GET", "/folders/"+mockRootFolderID+"/contents", nil)
@@ -195,8 +194,8 @@ func TestFetchRootFolderContents(t *testing.T) {
 	// Parse response body
 	var response struct {
 		Data struct {
-			Folders []*models.Folder `json:"folder_list"`
-			Files   []*models.File   `json:"file_list"`
+			Folders []*models.FolderResponse `json:"folder_list"`
+			Files   []*models.FileResponse   `json:"file_list"`
 		} `json:"data"`
 		Message string `json:"message"`
 		Status  string `json:"status"`
@@ -228,8 +227,8 @@ func TestFetchOtherRootContents(t *testing.T) {
 	mockOtherRootFolderID := "root_folder_id_456" // This is the root ID of other user
 
 	// Mock GetFolderListInFolder and GetFileListInFolder
-	mockFolderRepo.On("GetFolderListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
-	mockFolderRepo.On("GetFileListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
+	mockFolderRepo.On("GetFolderResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
+	mockFolderRepo.On("GetFileResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
 	// Create request
 	req, _ := http.NewRequest("GET", "/folders/"+mockOtherRootFolderID+"/contents", nil)
 	req.Header.Set("Authorization", mockBearerToken)
@@ -239,8 +238,8 @@ func TestFetchOtherRootContents(t *testing.T) {
 	// Parse response body
 	var response struct {
 		Data struct {
-			Folders []*models.Folder `json:"folder_list"`
-			Files   []*models.File   `json:"file_list"`
+			Folders []*models.FolderResponse `json:"folder_list"`
+			Files   []*models.FileResponse   `json:"file_list"`
 		} `json:"data"`
 		Message string `json:"message"`
 		Status  string `json:"status"`
