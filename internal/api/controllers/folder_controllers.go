@@ -50,7 +50,7 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 
 	folder, err := fc.FolderService.GetFolderByID(c, folderId)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder. Error: "+err.Error(), nil)
+		c.Error(err)
 		return
 	}
 
@@ -92,7 +92,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	// Cast the parent folder ID to ObjectID
 	parentFolderIdHex, err := primitive.ObjectIDFromHex(folderId)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Invalid parent folder ID. Error: "+err.Error(), nil)
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid parent folder ID. Error: "+err.Error(), nil)
 		return
 	}
 
@@ -115,7 +115,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	// Create the folder in the database
 	folderResult, err := fc.FolderService.CreateFolder(c, folder)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to create folder.", nil)
+		c.Error(err)
 		return
 	}
 
@@ -173,7 +173,11 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	wg.Wait()
 
 	if folderErr != nil || fileErr != nil {
-		shared.RespondJson(c, http.StatusNotFound, "error", "Failed to get folder contents. Error: "+folderErr.Error(), nil)
+		if folderErr != nil {
+			c.Error(folderErr)
+		} else {
+			c.Error(fileErr)
+		}
 		return
 	}
 
@@ -218,7 +222,7 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	// Delete the folder using the service
 	err := fc.FolderService.DeleteFolder(c, folderId)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder.", nil)
+		c.Error(err)
 		return
 	}
 
@@ -262,7 +266,7 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 	// Rename the folder using the service
 	err = fc.FolderService.RenameFolder(c, folderId, request.NewName)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to rename folder.", nil)
+		c.Error(err)
 		return
 	}
 
@@ -305,7 +309,7 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 	// Move the folder using the service
 	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to move folder.", nil)
+		c.Error(err)
 		return
 	}
 
@@ -376,8 +380,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 
 	fileMetadata, err := fc.FileService.UploadFileMetadata(c, file)
 	if err != nil {
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to upload file metadata.", nil)
-		return
+		c.Error(err)
 	}
 
 	// Create the response object

@@ -7,6 +7,7 @@ import (
 
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/routes"
+	"skybox-backend/internal/shared/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ulule/limiter/v3"
@@ -93,15 +94,7 @@ func (s *Server) RouteMiddleware(db *mongo.Database) {
 
 // globalErrorHandler set up a centralized error handler with secure defaults
 func (s *Server) GlobalErrorHandler() {
-	s.app.Use(func(c *gin.Context) {
-		c.Next()
-		if len(c.Errors) > 0 {
-			// Return a generic error message to the client
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "An internal server error occurred",
-			})
-		}
-	})
+	s.app.Use(middlewares.GlobalErrorMiddleware())
 }
 
 // corsMiddleware sets up CORS headers with more secure defaults

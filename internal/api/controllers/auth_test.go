@@ -14,7 +14,9 @@ import (
 
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
+	"skybox-backend/pkg/utils"
 
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -325,4 +327,72 @@ func TestLoginHandler_InvalidPayload(t *testing.T) {
 
 	// Assert response
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
+func TestLogoutHandler_Success(t *testing.T) {
+	r := gin.Default()
+	group := r.Group("/")
+	authController, _, mockUserTokenRepo := setupMockAuthServices()
+
+	authGroup := group.Group("/auth")
+	{
+		authGroup.POST("/logout", authController.LogoutHandler)
+	}
+
+	// Mock: DeleteUserToken succeeds
+	mockUserTokenRepo.On("DeleteUserToken", mock.Anything, "valid-refresh-token").Return(nil)
+
+	// Mock: GetKeyFromToken returns a valid user ID
+	patches := gomonkey.ApplyFunc(utils.GetKeyFromToken, func(key string, requestToken string, secret string) (string, error) {
+		return "valid-user-id", nil
+	})
+	defer patches.Reset()
+
+	// Request body
+	reqBody := map[string]string{
+		"refresh_token": "valid-refresh-token",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/auth/logout", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusOK, rr.Code)
+	mockUserTokenRepo.AssertExpectations(t)
+}
+
+func TestLogoutHandler_ExpiredToken(t *testing.T) {
+	r := gin.Default()
+	group := r.Group("/")
+	authController, _, mockUserTokenRepo := setupMockAuthServices()
+
+	authGroup := group.Group("/auth")
+	{
+		authGroup.POST("/logout", authController.LogoutHandler)
+	}
+
+	// Mock: GetKeyFromToken returns an error for expired token
+	patches := gomonkey.ApplyFunc(utils.GetKeyFromToken, func(key string, requestToken string, secret string) (string, error) {
+		return "valid-user-id", nil
+	})
+	defer patches.Reset()
+
+	// Mock: DeleteUserToken fails due to expired token
+	mockUserTokenRepo.On("DeleteUserToken", mock.Anything, "invalid-refresh-token").Return(errors.New("expired token"))
+
+	// Request body
+	reqBody := map[string]string{
+		"refresh_token": "invalid-refresh-token",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/auth/logout", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	mockUserTokenRepo.AssertExpectations(t)
 }

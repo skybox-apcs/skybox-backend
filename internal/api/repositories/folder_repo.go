@@ -65,7 +65,7 @@ func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*mode
 	folder := &models.Folder{}
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid folder ID")
 	}
 
 	// Find the folder by ID and isDeleted := false
@@ -87,14 +87,14 @@ func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, fol
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("invalid folder ID")
 	}
 
 	// Find the folder by ID and isDeleted := false
 	var folder models.Folder
 	err = collection.FindOne(ctx, bson.M{"_id": folderIDHex, "is_deleted": false}).Decode(&folder)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("folder not found or deleted")
 	}
 
 	// Get the Parent Folder ID
@@ -159,7 +159,7 @@ func (fr *folderRepository) GetFolderResponseListInFolder(ctx context.Context, f
 	// Check if folderID is a valid ObjectID
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid folder ID")
 	}
 
 	// Define the aggregation pipeline
@@ -333,7 +333,7 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid folder ID")
 	}
 
 	// Check if the folder is not root
@@ -368,7 +368,7 @@ func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName
 	// Check if the folder is not root
 	folder, err := fr.GetFolderByID(ctx, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("folder not found")
 	}
 
 	if folder.IsRoot {
