@@ -50,7 +50,7 @@ func LoadConfig() {
 	Config.ReleaseMode = getEnv("GIN_MODE", "debug") == "release"
 
 	// Allowed Origins
-	Config.AllowedOrigins = strings.Split(getEnv("ALLOWED_ORIGINS", ""), ",")
+	Config.AllowedOrigins = strings.Split(getEnv("ALLOWED_ORIGINS", "*"), ",")
 
 	// Database Config
 	Config.MongoURI = getEnv("MONGODB_URI", "mongodb://localhost:27017")
