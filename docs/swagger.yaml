@@ -330,7 +330,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a folder by its ID
+      description: Delete a folder by its ID. This will not delete the folder physically,
+        but mark it as deleted in the database.
       parameters:
       - description: Folder ID
         in: path
@@ -354,14 +355,50 @@ paths:
           description: Internal server error.
           schema:
             type: string
-      summary: Delete a folder
+      summary: Delete a folder of a given folderId
+      tags:
+      - Folders
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a folder metadata gievn its ID. It will return the folder
+        metadata like the folder ID, owner ID, and other metadata.
+      parameters:
+      - description: Folder ID
+        in: path
+        maxLength: 24
+        minLength: 24
+        name: folderId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Folder'
+        "400":
+          description: Invalid request.
+          schema:
+            type: string
+        "404":
+          description: Folder not found.
+          schema:
+            type: string
+        "500":
+          description: Internal server error.
+          schema:
+            type: string
+      summary: Get a folder metadata given its ID
       tags:
       - Folders
   /folders/{folderId}/contents:
     get:
       consumes:
       - application/json
-      description: Retrieve all folders and files inside the specified parent folder
+      description: Retrieve all folders and files inside the specified parent folder.
+        Return two separate list of folders and files.
       parameters:
       - description: Folder ID
         in: path
@@ -437,7 +474,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Move a folder to a new parent folder by its ID
+      description: Move the current folder (:folderId) to the new parent folder which
+        is new_parent_id in the request body.
       parameters:
       - description: Folder ID
         in: path
@@ -471,14 +509,14 @@ paths:
           description: Internal server error.
           schema:
             type: string
-      summary: Move a folder to a new parent folder
+      summary: Move a folder of given folderId to a new parent folder
       tags:
       - Folders
   /folders/{folderId}/rename:
     patch:
       consumes:
       - application/json
-      description: Rename a folder by its ID
+      description: Rename a folder of a given ID to new name.
       parameters:
       - description: Folder ID
         in: path
@@ -518,7 +556,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Rename a folder by its ID
+      description: Rename a folder of a given ID to new name.
       parameters:
       - description: Folder ID
         in: path

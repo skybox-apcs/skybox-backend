@@ -201,8 +201,8 @@ const docTemplate = `{
             }
         },
         "/folders/{folderId}": {
-            "delete": {
-                "description": "Delete a folder by its ID",
+            "get": {
+                "description": "Retrieve a folder metadata gievn its ID. It will return the folder metadata like the folder ID, owner ID, and other metadata.",
                 "consumes": [
                     "application/json"
                 ],
@@ -212,7 +212,57 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Delete a folder",
+                "summary": "Get a folder metadata given its ID",
+                "parameters": [
+                    {
+                        "maxLength": 24,
+                        "minLength": 24,
+                        "type": "string",
+                        "description": "Folder ID",
+                        "name": "folderId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Folder"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Folder not found.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a folder by its ID. This will not delete the folder physically, but mark it as deleted in the database.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Folders"
+                ],
+                "summary": "Delete a folder of a given folderId",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -248,7 +298,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/contents": {
             "get": {
-                "description": "Retrieve all folders and files inside the specified parent folder",
+                "description": "Retrieve all folders and files inside the specified parent folder. Return two separate list of folders and files.",
                 "consumes": [
                     "application/json"
                 ],
@@ -361,7 +411,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/move": {
             "put": {
-                "description": "Move a folder to a new parent folder by its ID",
+                "description": "Move the current folder (:folderId) to the new parent folder which is new_parent_id in the request body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -371,7 +421,7 @@ const docTemplate = `{
                 "tags": [
                     "Folders"
                 ],
-                "summary": "Move a folder to a new parent folder",
+                "summary": "Move a folder of given folderId to a new parent folder",
                 "parameters": [
                     {
                         "maxLength": 24,
@@ -422,7 +472,7 @@ const docTemplate = `{
         },
         "/folders/{folderId}/rename": {
             "put": {
-                "description": "Rename a folder by its ID",
+                "description": "Rename a folder of a given ID to new name.",
                 "consumes": [
                     "application/json"
                 ],
@@ -481,7 +531,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Rename a folder by its ID",
+                "description": "Rename a folder of a given ID to new name.",
                 "consumes": [
                     "application/json"
                 ],
