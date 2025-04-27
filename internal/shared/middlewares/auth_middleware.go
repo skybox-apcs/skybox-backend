@@ -7,6 +7,7 @@ import (
 	"skybox-backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func JwtAuthMiddleware(secret string) gin.HandlerFunc {
@@ -42,7 +43,16 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 		}
 
 		// Set the user ID in the context
+		userIdHex, err := primitive.ObjectIDFromHex(userId)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token (Hex conversion failed)"})
+			c.Abort()
+			return
+		}
+
 		c.Set("x-user-id", userId)
+		c.Set("x-user-id-hex", userIdHex)
+
 		c.Next()
 	}
 }

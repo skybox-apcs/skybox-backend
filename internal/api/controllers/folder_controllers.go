@@ -47,8 +47,8 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the folder by ID from the service
-	folder, err := fc.FolderService.GetFolderByID(c, folderId)
+	ownerId := c.MustGet("x-user-id-hex").(primitive.ObjectID) // Get the owner ID from the context
+	folder, err := fc.FolderService.GetFolderByID(c, folderId, ownerId)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder. Error: "+err.Error(), nil)
 		return
@@ -97,12 +97,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	}
 
 	// Cast the owner ID to ObjectID
-	// c.Set("x-user-id", userId)
-	ownerIdHex, err := primitive.ObjectIDFromHex(c.GetString("x-user-id"))
-	if err != nil {
-		shared.RespondJson(c, http.StatusNotFound, "error", "Invalid owner ID.", nil)
-		return
-	}
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
 
 	// Create the folder object
 	folder := &models.Folder{
@@ -118,7 +113,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	}
 
 	// Create the folder in the database
-	folderResult, err := fc.FolderService.CreateFolder(c, folder)
+	folderResult, err := fc.FolderService.CreateFolder(c, folder, c.MustGet("x-user-id-hex").(primitive.ObjectID))
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to create folder.", nil)
 		return
@@ -158,14 +153,15 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	}
 
 	// Get the folder list from the service
-	folderList, err := fc.FolderService.GetFolderListInFolder(c, folderId)
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
+	folderList, err := fc.FolderService.GetFolderListInFolder(c, folderId, ownerIdHex)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get folder contents. Error: "+err.Error(), nil)
 		return
 	}
 
 	// Get the file list from the service
-	fileList, err := fc.FolderService.GetFileListInFolder(c, folderId)
+	fileList, err := fc.FolderService.GetFileListInFolder(c, folderId, ownerIdHex)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get file list. Error: "+err.Error(), nil)
 		return
@@ -210,7 +206,8 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	}
 
 	// Delete the folder using the service
-	err := fc.FolderService.DeleteFolder(c, folderId)
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
+	err := fc.FolderService.DeleteFolder(c, folderId, ownerIdHex)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete folder.", nil)
 		return
@@ -254,7 +251,8 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 	}
 
 	// Rename the folder using the service
-	err = fc.FolderService.RenameFolder(c, folderId, request.NewName)
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
+	err = fc.FolderService.RenameFolder(c, folderId, request.NewName, ownerIdHex)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to rename folder.", nil)
 		return
@@ -297,7 +295,8 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 	}
 
 	// Move the folder using the service
-	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID)
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
+	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID, ownerIdHex)
 	if err != nil {
 		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to move folder.", nil)
 		return
@@ -347,11 +346,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 	}
 
 	// Cast the owner ID to ObjectID
-	ownerIdHex, err := primitive.ObjectIDFromHex(c.GetString("x-user-id"))
-	if err != nil {
-		shared.RespondJson(c, http.StatusNotFound, "error", "Invalid owner ID.", nil)
-		return
-	}
+	ownerIdHex := c.MustGet("x-user-id-hex").(primitive.ObjectID)
 
 	// Get the file extension from the file name
 	fileExtension := filepath.Ext(request.FileName)
