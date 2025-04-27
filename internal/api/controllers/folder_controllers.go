@@ -24,6 +24,18 @@ func NewFolderController(folderService *services.FolderService) *FolderControlle
 }
 
 // GetFolderHandler godoc
+//
+// @Summary Get a folder metadata by its ID
+// @Description Retrieve a folder metadata by its ID
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Success 200 {object} models.Folder
+// @Failure 400 {string} string "Invalid request."
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId} [get]
 func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -203,4 +215,91 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 
 	// Send a success response
 	shared.RespondJson(c, http.StatusOK, "success", "Folder deleted successfully.", nil)
+}
+
+// RenameFolderHandler godoc
+//
+// @Summary Rename a folder of a given ID
+// @Description Rename a folder by its ID
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Param request body models.RenameFolderRequest true "Rename Folder Request"
+// @Success 200 {string} string "Folder renamed successfully."
+// @Failure 400 {string} string "Invalid request."
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId}/rename [put]
+// @Router /folders/{folderId}/rename [patch]
+func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
+	// Get the folder ID from the request parameters
+	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	// Define the request body structure
+	var request models.RenameFolderRequest
+
+	// Bind the request body to the structure
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	// Rename the folder using the service
+	err = fc.FolderService.RenameFolder(c, folderId, request.NewName)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to rename folder.", nil)
+		return
+	}
+
+	// Send a success response
+	shared.RespondJson(c, http.StatusOK, "success", "Folder renamed successfully.", nil)
+}
+
+// MoveFolderHandler godoc
+//
+// @Summary Move a folder of given folderId to a new parent folder
+// @Description Move a folder of given folderId to a new parent folder with newParentId
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Param request body models.MoveFolderRequest true "Move Folder Request"
+// @Success 200 {string} string "Folder moved successfully."
+// @Failure 400 {string} string "Invalid request."
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId}/move [put]
+func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
+	// Get the folder ID from the request parameters
+	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	// Define the request body structure
+	var request models.MoveFolderRequest
+
+	// Bind the request body to the structure
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	// Move the folder using the service
+	err = fc.FolderService.MoveFolder(c, folderId, request.NewParentID)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to move folder.", nil)
+		return
+	}
+
+	// Send a success response
+	shared.RespondJson(c, http.StatusOK, "success", "Folder moved successfully.", nil)
 }

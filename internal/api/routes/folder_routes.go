@@ -22,8 +22,11 @@ func NewFolderRouters(db *mongo.Database, group *gin.RouterGroup) {
 	folderGroup := group.Group("/folders")
 	{
 		folderGroup.GET("/:folderId", fc.GetFolderHandler)
+		folderGroup.DELETE("/:folderId", fc.DeleteFolderHandler)
 		folderGroup.GET("/:folderId/contents", fc.GetContentsHandler)
 		folderGroup.POST("/:folderId/create", fc.CreateFolderHandler)
-		folderGroup.DELETE("/:folderId", fc.DeleteFolderHandler)
+		folderGroup.PUT("/:folderId/rename", fc.RenameFolderHandler)
+		folderGroup.PATCH("/:folderId/rename", fc.RenameFolderHandler)
+		folderGroup.PUT("/:folderId/move", fc.MoveFolderHandler)
 	}
 }
