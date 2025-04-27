@@ -26,11 +26,14 @@ type File struct {
 
 	// ChunkList   []Chunk `bson:"chunk_list" json:"chunk_list"`
 	TotalChunks int `bson:"total_chunks" json:"total_chunks"`
+
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }
 
 type FileRepository interface {
-	CreateFile(ctx context.Context, file *File) (*File, error)
-	GetFileByID(ctx context.Context, id string) (*File, error) // Get FilenewParentID metadata
+	UploadFileMetadata(ctx context.Context, file *File) (*File, error) // Upload file metadata
+	GetFileByID(ctx context.Context, id string) (*File, error)         // Get FilenewParentID metadata
 	DeleteFile(ctx context.Context, id string) error
 	RenameFile(ctx context.Context, id string, newName string) error
 	MoveFile(ctx context.Context, id string, newParentFolderID string) error

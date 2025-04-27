@@ -18,11 +18,11 @@ func NewFileService(fr models.FileRepository) *FileService {
 	}
 }
 
-func (fr *FileService) CreateFile(ctx context.Context, file *models.File) (*models.File, error) {
+func (fr *FileService) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return fr.fileRepository.CreateFile(ctx, file)
+	return fr.fileRepository.UploadFileMetadata(ctx, file)
 }
 
 func (fr *FileService) GetFileByID(ctx context.Context, id string) (*models.File, error) {

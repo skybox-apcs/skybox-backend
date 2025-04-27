@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type CreateFolderRequest struct {
 	Name string `json:"name" binding:"required"`
 }
@@ -30,4 +32,26 @@ type MoveFolderRequest struct {
 }
 
 type MoveFolderResponse struct {
+}
+
+type FileResponse struct {
+	ID             string    `json:"id"`
+	OwnerID        string    `json:"owner_id"`
+	ParentFolderID string    `json:"parent_id"`
+	Name           string    `json:"name"`
+	MimeType       string    `json:"mime_type"`
+	Size           int64     `json:"size"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type UploadFileMetadataRequest struct {
+	FileName string `json:"file_name" binding:"required"`
+	FileSize int64  `json:"file_size" binding:"required"`
+	MimeType string `json:"mime_type"` // optional
+}
+
+type UploadFileMetadataResponse struct {
+	File      FileResponse `json:"file"`
+	UploadURL string       `json:"upload_url" binding:"required"`
 }
