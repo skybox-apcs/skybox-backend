@@ -24,20 +24,17 @@ func NewFileRepository(db *mongo.Database, collection string) *fileRepository {
 	}
 }
 
-// CreateFile creates a new file
-func (fr *fileRepository) CreateFile(ctx context.Context, file *models.File) (*models.File, error) {
+func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
 
-	// Create file in database
+	// Insert the file metadata into the database
 	result, err := collection.InsertOne(ctx, file)
 	if err != nil {
 		return nil, err
 	}
 
-	// Assign the ID to the file object
-	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
-		file.ID = oid
-	}
+	// Set the ID of the file to the inserted ID
+	file.ID = result.InsertedID.(primitive.ObjectID)
 
 	return file, nil
 }
@@ -121,9 +118,7 @@ func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFold
 	var folder models.Folder
 	err = folderCollection.FindOne(ctx, bson.M{"_id": newParentIDHex}).Decode(&folder)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return err
-		}
+		return err
 	}
 
 	// Move the file by updating the parent_folder_id field

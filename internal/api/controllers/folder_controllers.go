@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 
 	// "skybox-backend/configs"
@@ -14,12 +15,14 @@ import (
 )
 
 type FolderController struct {
+	FileService   *services.FileService
 	FolderService *services.FolderService
 }
 
-func NewFolderController(folderService *services.FolderService) *FolderController {
+func NewFolderController(folderService *services.FolderService, fileService *services.FileService) *FolderController {
 	return &FolderController{
 		FolderService: folderService,
+		FileService:   fileService,
 	}
 }
 
@@ -302,4 +305,92 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 
 	// Send a success response
 	shared.RespondJson(c, http.StatusOK, "success", "Folder moved successfully.", nil)
+}
+
+// UploadFileMetadataHandler godoc
+//
+// @Summary Upload metadata and create a file metadata in the database before upload operation.
+// @Description Create a file document in the database for file upload operation.
+// @Tags Files
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
+// @Param request body models.UploadFileMetadataRequest true "Upload File Metadata Request"
+// @Success 200 {object} models.UploadFileMetadataResponse
+// @Failure 400 {string} string "Invalid request."
+// @Failure 404 {string} string "Folder not found."
+// @Failure 500 {string} string "Internal server error."
+// @Router /folders/{folderId}/upload [post]
+func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
+	// Get the folder ID from the request parameters
+	folderId := c.Param("folderId")
+	if folderId == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	// Define the request body structure
+	var request models.UploadFileMetadataRequest
+
+	// Bind the request body to the structure
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	// Cast the folder ID to ObjectID
+	fileIdHex, err := primitive.ObjectIDFromHex(folderId)
+	if err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid folder ID.", nil)
+		return
+	}
+
+	// Cast the owner ID to ObjectID
+	ownerIdHex, err := primitive.ObjectIDFromHex(c.GetString("x-user-id"))
+	if err != nil {
+		shared.RespondJson(c, http.StatusNotFound, "error", "Invalid owner ID.", nil)
+		return
+	}
+
+	// Get the file extension from the file name
+	fileExtension := filepath.Ext(request.FileName)
+
+	// Create the file object
+	file := &models.File{
+		OwnerID:        ownerIdHex,
+		ParentFolderID: fileIdHex,
+		FileName:       request.FileName,
+		Size:           request.FileSize,
+		Extension:      fileExtension,
+		MimeType:       request.MimeType,
+		IsDeleted:      false,
+		DeletedAt:      nil,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	fileMetadata, err := fc.FileService.UploadFileMetadata(c, file)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to upload file metadata.", nil)
+		return
+	}
+
+	// Create the response object
+	response := &models.UploadFileMetadataResponse{
+		File: models.FileResponse{
+			ID:             fileMetadata.ID.Hex(),
+			OwnerID:        fileMetadata.OwnerID.Hex(),
+			ParentFolderID: fileMetadata.ParentFolderID.Hex(),
+			Name:           fileMetadata.FileName,
+			MimeType:       fileMetadata.MimeType,
+			Size:           fileMetadata.Size,
+			CreatedAt:      fileMetadata.CreatedAt,
+			UpdatedAt:      fileMetadata.UpdatedAt,
+		},
+		UploadURL: "",
+	}
+
+	// Send a success response
+	shared.RespondJson(c, http.StatusOK, "success", "File metadata uploaded successfully.", response)
 }
