@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"skybox-backend/configs"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,29 +15,36 @@ type Application struct {
 func NewApplication() Application {
 	app := &Application{}
 
-	app.Mongo = NewMongoDatabase() // Connect to the MongoDB
+	// Connect to MongoDB
+	app.Mongo = NewMongoDatabase()
+	fmt.Println("Connected to MongoDB")
 
 	return *app
 }
 
 func (app *Application) CloseDBConnection() {
 	CloseMongoDatabase(app.Mongo)
+	fmt.Println("Closed MongoDB connection")
 }
 
 func StartServer() {
 	// Create a new application
 	application := NewApplication()
+	defer application.CloseDBConnection()
 
 	// Setup the DB
 	db := application.Mongo.Database(configs.Config.MongoDBName)
-	defer application.CloseDBConnection()
 
 	// Start the server
 	ginServer := NewServer()
+
+	// Setup middleware in order of execution
 	ginServer.CorsMiddleware()
 	ginServer.SecurityMiddleware()
+	ginServer.RateLimitMiddleware()
 	ginServer.RouteMiddleware(db)
 	ginServer.GlobalErrorHandler()
 
+	// Start the server
 	ginServer.StartServer()
 }
