@@ -46,11 +46,25 @@ func (fr *FolderService) GetFolderListInFolder(ctx context.Context, id string) (
 	return fr.folderRepository.GetFolderListInFolder(ctx, id)
 }
 
+func (fr *FolderService) GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*models.FolderResponse, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fr.folderRepository.GetFolderResponseListInFolder(ctx, folderID)
+}
+
 func (fr *FolderService) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	return fr.folderRepository.GetFileListInFolder(ctx, folderID)
+}
+
+func (fr *FolderService) GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*models.FileResponse, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fr.folderRepository.GetFileResponseListInFolder(ctx, folderID)
 }
 
 func (fr *FolderService) DeleteFolder(ctx context.Context, id string) error {

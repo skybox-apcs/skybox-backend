@@ -139,6 +139,82 @@ func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID 
 	return contents, nil
 }
 
+// GetFolderResponseListInFolder retrieves the folder responses in a folder by ID
+// For the ownerID, it will get the Username and Email from the token
+// SELECT * FROM folders f
+// JOIN users u ON f.owner_id = u.id
+// WHERE f.parent_folder_id = folderID AND f.is_deleted = false
+func (fr *folderRepository) GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*models.FolderResponse, error) {
+	collection := fr.database.Collection(fr.collection)
+
+	// Decode the results into a slice of FileResponse
+	var folderResponse []*models.FolderResponse
+
+	// Get the current folder and check if the user has permission to access the folder
+	_, err := fr.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if folderID is a valid ObjectID
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Define the aggregation pipeline
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"parent_folder_id": folderIDHex,
+				"is_deleted":       false,
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         models.CollectionUsers, // The users collection
+				"localField":   "owner_id",             // The field in the files collection
+				"foreignField": "_id",                  // The field in the users collection
+				"as":           "owner_details",        // The field to store the joined data
+			},
+		},
+		{
+			"$unwind": bson.M{
+				"path":                       "$owner_details",
+				"preserveNullAndEmptyArrays": true, // Optional: Keep files without matching users
+			},
+		},
+		{
+			"$project": bson.M{
+				"id":               "$_id",
+				"name":             "$name",
+				"owner_id":         "$owner_id",
+				"owner_user_name":  "$owner_details.username",
+				"owner_email":      "$owner_details.email",
+				"parent_folder_id": "$parent_folder_id",
+				"stats":            "$stats",
+				"created_at":       "$created_at",
+				"updated_at":       "$updated_at",
+			},
+		},
+	}
+
+	// TODO: Implement sharing functionality later
+	// Get all folder contents where parent_folder_id matches the folderID
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Iterate through the cursor and decode each document into a slice of Folder
+	if cursor.All(ctx, &folderResponse); err != nil {
+		return nil, err
+	}
+
+	return folderResponse, nil
+}
+
 // GetFileListInFolder retrieves the files in a folder by ID
 func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
 	collection := fr.database.Collection(models.CollectionFiles)
@@ -174,6 +250,82 @@ func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID st
 	}
 
 	return files, nil
+}
+
+// GetFileResponseListInFolder retrieves the file responses in a folder by ID
+// For the ownerID, it will get the Username and Email from the token
+// SELECT *
+// FROM files f
+// JOIN users u ON f.owner_id = u.id
+// WHERE f.parent_folder_id = folderID AND f.is_deleted = false
+func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*models.FileResponse, error) {
+	folderCollection := fr.database.Collection(models.CollectionFiles)
+
+	// Decode the results into a slice of FileResponse
+	var fileResponses []*models.FileResponse
+
+	// Get the current folder and check if the user has permission to access the folder
+	_, err := fr.GetFolderByID(ctx, folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if folderID is a valid ObjectID
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Define the aggregation pipeline
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"parent_folder_id": folderIDHex,
+				"is_deleted":       false,
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         models.CollectionUsers, // The users collection
+				"localField":   "owner_id",             // The field in the files collection
+				"foreignField": "_id",                  // The field in the users collection
+				"as":           "owner_details",        // The field to store the joined data
+			},
+		},
+		{
+			"$unwind": bson.M{
+				"path":                       "$owner_details",
+				"preserveNullAndEmptyArrays": true, // Optional: Keep files without matching users
+			},
+		},
+		{
+			"$project": bson.M{
+				"id":               "$_id",
+				"name":             "$file_name",
+				"owner_id":         "$owner_id",
+				"owner_username":   "$owner_details.username",
+				"owner_email":      "$owner_details.email",
+				"parent_folder_id": "$parent_folder_id",
+				"size":             "$size",
+				"mime_type":        "$mime_type",
+				"created_at":       "$created_at",
+				"updated_at":       "$updated_at",
+			},
+		},
+	}
+
+	cursor, err := folderCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Iterate through the cursor and decode each document into a slice of FileResponse
+	if cursor.All(ctx, &fileResponses); err != nil {
+		return nil, err
+	}
+
+	return fileResponses, nil
 }
 
 func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {

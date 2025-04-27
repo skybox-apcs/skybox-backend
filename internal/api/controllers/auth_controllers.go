@@ -236,7 +236,7 @@ func (ac *AuthController) RefreshHandler(c *gin.Context) {
 	}
 
 	// Validate the refresh token
-	user_id, err := utils.GetIDFromToken(request.RefreshToken, configs.Config.JWTSecret)
+	user_id, err := utils.GetKeyFromToken("ID", request.RefreshToken, configs.Config.JWTSecret)
 	if err != nil {
 		respondJson(c, http.StatusUnauthorized, "error", "Invalid refresh token.", nil)
 		return
@@ -310,7 +310,7 @@ func (ac *AuthController) LogoutHandler(c *gin.Context) {
 	}
 
 	// Validate the refresh token
-	_, err = utils.GetIDFromToken(request.RefreshToken, configs.Config.JWTSecret)
+	_, err = utils.GetKeyFromToken("ID", request.RefreshToken, configs.Config.JWTSecret)
 	if err != nil {
 		respondJson(c, http.StatusUnauthorized, "error", "Invalid refresh token.", nil)
 		return

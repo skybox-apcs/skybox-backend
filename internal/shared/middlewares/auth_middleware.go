@@ -35,9 +35,23 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 			return
 		}
 
-		userId, err := utils.GetIDFromToken(authToken, secret)
+		// Get the user ID from the token
+		userId, err := utils.GetKeyFromToken("ID", authToken, secret)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token (ID not found)"})
+			c.Abort()
+			return
+		}
+
+		// Get the username and email from the token
+		username, err := utils.GetKeyFromToken("Username", authToken, secret)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token (Username not found)"})
+			c.Abort()
+		}
+		email, err := utils.GetKeyFromToken("Email", authToken, secret)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token (Email not found)"})
 			c.Abort()
 			return
 		}
@@ -52,6 +66,8 @@ func JwtAuthMiddleware(secret string) gin.HandlerFunc {
 
 		c.Set("x-user-id", userId)
 		c.Set("x-user-id-hex", userIdHex)
+		c.Set("x-username", username)
+		c.Set("x-email", email)
 
 		c.Next()
 	}

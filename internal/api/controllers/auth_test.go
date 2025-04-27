@@ -47,6 +47,14 @@ func (m *MockUserRepository) GetUserByID(ctx context.Context, id string) (*model
 	return nil, args.Error(1)
 }
 
+func (m *MockUserRepository) GetUsersByIDs(ctx context.Context, user []string) ([]*models.User, error) {
+	args := m.Called(ctx, user)
+	if users, ok := args.Get(0).([]*models.User); ok {
+		return users, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockUserRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	args := m.Called(ctx, username)
 	if user, ok := args.Get(0).(*models.User); ok {

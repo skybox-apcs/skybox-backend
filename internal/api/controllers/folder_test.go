@@ -52,10 +52,26 @@ func (m *MockFolderRepository) GetFolderListInFolder(ctx context.Context, id str
 	return nil, args.Error(1)
 }
 
+func (m *MockFolderRepository) GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*models.FolderResponse, error) {
+	args := m.Called(ctx, folderID)
+	if folderResponses, ok := args.Get(0).([]*models.FolderResponse); ok {
+		return folderResponses, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockFolderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
 	args := m.Called(ctx, folderID)
 	if files, ok := args.Get(0).([]*models.File); ok {
 		return files, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockFolderRepository) GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*models.FileResponse, error) {
+	args := m.Called(ctx, folderID)
+	if fileResponse, ok := args.Get(0).([]*models.FileResponse); ok {
+		return fileResponse, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
