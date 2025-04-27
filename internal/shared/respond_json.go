@@ -13,3 +13,21 @@ func RespondJson(c *gin.Context, httpStatus int, status string, message string, 
 		"data":    data,
 	})
 }
+
+// SuccessJSON sends a JSON response with a success message and data
+func SuccessJSON(c *gin.Context, statusCode int, message string, data interface{}) {
+	c.JSON(statusCode, gin.H{
+		"status":  "success",
+		"message": message,
+		"data":    data,
+	})
+}
+
+// ErrorJSON sends a JSON response with an error message
+func ErrorJSON(c *gin.Context, statusCode int, message string) {
+	c.JSON(statusCode, gin.H{
+		"status":  "error",
+		"message": message,
+		"data":    nil,
+	})
+}

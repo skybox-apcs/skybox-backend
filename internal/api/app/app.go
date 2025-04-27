@@ -40,10 +40,10 @@ func StartServer() {
 
 	// Setup middleware in order of execution
 	ginServer.CorsMiddleware()
+	ginServer.GlobalErrorHandler()
 	ginServer.SecurityMiddleware()
 	ginServer.RateLimitMiddleware()
 	ginServer.RouteMiddleware(db)
-	ginServer.GlobalErrorHandler()
 
 	// Start the server
 	ginServer.StartServer()

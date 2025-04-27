@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
+	"skybox-backend/internal/shared/middlewares"
 
 	"net/http/httptest"
 
@@ -144,6 +146,7 @@ func setupMockServices() (*FolderController, *MockFolderRepository, *MockFileRep
 
 func TestFetchRootFolderContents(t *testing.T) {
 	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
 	folderController, mockFolderRepo, _ := setupMockServices()
 
@@ -214,6 +217,7 @@ func TestFetchRootFolderContents(t *testing.T) {
 
 func TestFetchOtherRootContents(t *testing.T) {
 	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
 	folderController, mockFolderRepo, _ := setupMockServices()
 
@@ -227,8 +231,9 @@ func TestFetchOtherRootContents(t *testing.T) {
 	mockOtherRootFolderID := "root_folder_id_456" // This is the root ID of other user
 
 	// Mock GetFolderListInFolder and GetFileListInFolder
-	mockFolderRepo.On("GetFolderResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
-	mockFolderRepo.On("GetFileResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found"))
+	mockFolderRepo.On("GetFolderResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found or deleted"))
+	mockFolderRepo.On("GetFileResponseListInFolder", mock.Anything, mockOtherRootFolderID).Return(nil, fmt.Errorf("folder not found or deleted"))
+
 	// Create request
 	req, _ := http.NewRequest("GET", "/folders/"+mockOtherRootFolderID+"/contents", nil)
 	req.Header.Set("Authorization", mockBearerToken)
@@ -250,4 +255,160 @@ func TestFetchOtherRootContents(t *testing.T) {
 
 	// Assert mock expectations
 	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestRenameFolder_Success(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/rename", folderController.RenameFolderHandler)
+	}
+
+	// Mock folder ID and new name
+	mockFolderID := "folder_id_123"
+	mockNewName := "New Folder Name"
+
+	// Mock RenameFolder to succeed
+	mockFolderRepo.On("RenameFolder", mock.Anything, mockFolderID, mockNewName).Return(nil)
+
+	// Create request
+	reqBody := map[string]string{
+		"new_name": mockNewName,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/rename", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+	assert.Equal(t, "Folder renamed successfully.", response.Message)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestRenameFolder_RootFolderError(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/rename", folderController.RenameFolderHandler)
+	}
+
+	// Mock root folder ID and new name
+	mockRootFolderID := "root_folder_id_123"
+	mockNewName := "New Root Folder Name"
+
+	// Mock RenameFolder to return an error for root folder
+	mockFolderRepo.On("RenameFolder", mock.Anything, mockRootFolderID, mockNewName).Return(fmt.Errorf("cannot rename root folder"))
+
+	// Create request
+	reqBody := map[string]string{
+		"new_name": mockNewName,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockRootFolderID+"/rename", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestRenameFolder_InvalidPayload(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, _, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/rename", folderController.RenameFolderHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := "folder_id_123"
+
+	// Create request with invalid payload
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/rename", bytes.NewBuffer([]byte("{invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+	assert.Equal(t, "Invalid request.", response.Message)
+}
+
+func TestRenameFolder_OtherUserFolder(t *testing.T) {
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.PUT("/:folderId/rename", folderController.RenameFolderHandler)
+	}
+
+	// Mock folder ID and new name
+	mockFolderID := "folder_id_123"
+	mockNewName := "New Folder Name"
+
+	// Mock RenameFolder to return an error for other user's folder
+	mockFolderRepo.On("RenameFolder", mock.Anything, mockFolderID, mockNewName).Return(fmt.Errorf("folder not found"))
+
+	// Create request
+	reqBody := map[string]string{
+		"new_name": mockNewName,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/folders/"+mockFolderID+"/rename", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+
 }
