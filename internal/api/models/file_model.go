@@ -29,7 +29,9 @@ type File struct {
 }
 
 type FileRepository interface {
-	CreateFile(ctx context.Context, file *File) error
-	GetFileByID(ctx context.Context, id string) (*File, error)
+	CreateFile(ctx context.Context, file *File) (*File, error)
+	GetFileByID(ctx context.Context, id string) (*File, error) // Get FilenewParentID metadata
 	DeleteFile(ctx context.Context, id string) error
+	RenameFile(ctx context.Context, id string, newName string) error
+	MoveFile(ctx context.Context, id string, newParentFolderID string) error
 }
