@@ -29,6 +29,19 @@ func NewFolderRepository(db *mongo.Database, collection string) *folderRepositor
 func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Folder, userID primitive.ObjectID) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 
+	// Get the folder ID from the parent folder if it exists
+	if folder.ParentFolderID != primitive.NilObjectID {
+		folder, err := fr.GetFolderByID(ctx, folder.ParentFolderID.Hex(), userID)
+		if err != nil {
+			return nil, fmt.Errorf("parent folder not found")
+		}
+
+		// TODO: Implement sharing functionality later
+		if folder.OwnerID != userID {
+			return nil, fmt.Errorf("user does not have permission to create a folder in this parent folder")
+		}
+	}
+
 	// Create folder in database
 	result, err := collection.InsertOne(ctx, folder)
 	if err != nil {
@@ -76,13 +89,14 @@ func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, fol
 	}
 
 	// Find the folder by ID and isDeleted := false
-	err = collection.FindOne(ctx, bson.M{"_id": folderIDHex, "is_deleted": false}).Decode(folderIDHex)
+	var folder models.Folder
+	err = collection.FindOne(ctx, bson.M{"_id": folderIDHex, "is_deleted": false}).Decode(&folder)
 	if err != nil {
 		return "", err
 	}
 
 	// Get the Parent Folder ID
-	parentFolderID := folderIDHex.Hex()
+	parentFolderID := folder.ParentFolderID.Hex()
 	return parentFolderID, nil
 }
 
@@ -225,11 +239,18 @@ func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParent
 	if folder.IsRoot {
 		return fmt.Errorf("cannot move root folder")
 	}
+	// TODO: Implement sharing functionality later
+	if folder.OwnerID != userId {
+		return fmt.Errorf("user does not have permission to move this folder")
+	}
 
 	// Check if the new parent folder ID is valid
-	_, err = fr.GetFolderByID(ctx, newParentID, userId)
+	parentFolder, err := fr.GetFolderByID(ctx, newParentID, userId)
 	if err != nil {
 		return err
+	}
+	if parentFolder.OwnerID != userId {
+		return fmt.Errorf("user does not have permission to move this folder to the new parent folder")
 	}
 
 	// Update the parent folder ID
