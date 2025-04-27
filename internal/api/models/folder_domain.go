@@ -17,3 +17,17 @@ type GetFolderContentsResponse struct {
 	FolderList []*Folder `json:"folder_list"`
 	FileList   []*File   `json:"file_list"`
 }
+
+type RenameFolderRequest struct {
+	NewName string `json:"new_name" binding:"required"`
+}
+
+type RenameFolderResponse struct {
+}
+
+type MoveFolderRequest struct {
+	NewParentID string `json:"new_parent_id" binding:"required"`
+}
+
+type MoveFolderResponse struct {
+}

@@ -156,7 +156,6 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 		return err
 	}
 
-	fmt.Println("Folder content: ", folder)
 	if folder.IsRoot {
 		return fmt.Errorf("cannot delete root folder")
 	}
@@ -166,6 +165,71 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 		"$set": bson.M{
 			"is_deleted": true,
 			"deleted_at": time.Now(),
+		},
+	})
+
+	return err
+}
+
+func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName string) error {
+	collection := fr.database.Collection(fr.collection)
+
+	idHex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	// Check if the folder is not root
+	folder, err := fr.GetFolderByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if folder.IsRoot {
+		return fmt.Errorf("cannot rename root folder")
+	}
+
+	// Update the folder name
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": idHex}, bson.M{
+		"$set": bson.M{
+			"name": newName,
+		},
+	})
+
+	return err
+}
+
+func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParentID string) error {
+	collection := fr.database.Collection(fr.collection)
+
+	idHex, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	newParentIDHex, err := primitive.ObjectIDFromHex(newParentID)
+	if err != nil {
+		return err
+	}
+
+	// Check if the folder is not root
+	folder, err := fr.GetFolderByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if folder.IsRoot {
+		return fmt.Errorf("cannot move root folder")
+	}
+
+	// Check if the new parent folder ID is valid
+	_, err = fr.GetFolderByID(ctx, newParentID)
+	if err != nil {
+		return err
+	}
+
+	// Update the parent folder ID
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": idHex}, bson.M{
+		"$set": bson.M{
+			"parent_folder_id": newParentIDHex,
 		},
 	})
 

@@ -59,3 +59,17 @@ func (fr *FolderService) DeleteFolder(ctx context.Context, id string) error {
 
 	return fr.folderRepository.DeleteFolder(ctx, id)
 }
+
+func (fr *FolderService) RenameFolder(ctx context.Context, id string, newName string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fr.folderRepository.RenameFolder(ctx, id, newName)
+}
+
+func (fr *FolderService) MoveFolder(ctx context.Context, id string, newParentID string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fr.folderRepository.MoveFolder(ctx, id, newParentID)
+}
