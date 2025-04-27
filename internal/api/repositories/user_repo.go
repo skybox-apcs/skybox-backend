@@ -67,8 +67,11 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (*mo
 
 	user := &models.User{}
 	err := collection.FindOne(ctx, map[string]string{"email": email}).Decode(user)
+	if err != nil {
+		return nil, err
+	}
 
-	return user, err
+	return user, nil
 }
 
 // GetUserByID retrieves a user by ID
@@ -92,8 +95,11 @@ func (ur *userRepository) GetUserByUsername(ctx context.Context, username string
 
 	user := &models.User{}
 	err := collection.FindOne(ctx, map[string]string{"username": username}).Decode(user)
+	if err != nil {
+		return nil, err
+	}
 
-	return user, err
+	return user, nil
 }
 
 // UpdateUserLastLogin updates the last login time of a user
