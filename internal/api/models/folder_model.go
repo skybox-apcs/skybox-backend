@@ -33,12 +33,12 @@ type Folder struct {
 }
 
 type FolderRepository interface {
-	CreateFolder(ctx context.Context, folder *Folder) (*Folder, error)
-	GetFolderByID(ctx context.Context, id string) (*Folder, error)
-	GetFolderParentIDByFolderID(ctx context.Context, folderID string) (string, error)
-	GetFolderListInFolder(ctx context.Context, folderID string) ([]*Folder, error)
-	GetFileListInFolder(ctx context.Context, folderID string) ([]*File, error)
-	DeleteFolder(ctx context.Context, id string) error
-	RenameFolder(ctx context.Context, id string, newName string) error
-	MoveFolder(ctx context.Context, id string, newParentID string) error
+	CreateFolder(ctx context.Context, folder *Folder, userID primitive.ObjectID) (*Folder, error)
+	GetFolderByID(ctx context.Context, id string, userID primitive.ObjectID) (*Folder, error)
+	GetFolderParentIDByFolderID(ctx context.Context, folderID string, userID primitive.ObjectID) (string, error)
+	GetFolderListInFolder(ctx context.Context, folderID string, userID primitive.ObjectID) ([]*Folder, error)
+	GetFileListInFolder(ctx context.Context, folderID string, userID primitive.ObjectID) ([]*File, error)
+	DeleteFolder(ctx context.Context, id string, userID primitive.ObjectID) error
+	RenameFolder(ctx context.Context, id string, newName string, userID primitive.ObjectID) error
+	MoveFolder(ctx context.Context, id string, newParentID string, userID primitive.ObjectID) error
 }
