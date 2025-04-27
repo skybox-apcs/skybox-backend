@@ -32,13 +32,13 @@ func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 
 	// Get the folder ID from the parent folder if it exists
 	if folder.ParentFolderID != primitive.NilObjectID {
-		folder, err := fr.GetFolderByID(ctx, folder.ParentFolderID.Hex())
+		parentFolder, err := fr.GetFolderByID(ctx, folder.ParentFolderID.Hex())
 		if err != nil {
 			return nil, fmt.Errorf("parent folder not found")
 		}
 
 		// TODO: Implement sharing functionality later
-		if folder.OwnerID != userID {
+		if parentFolder.OwnerID != userID {
 			return nil, fmt.Errorf("user does not have permission to create a folder in this parent folder")
 		}
 	}
