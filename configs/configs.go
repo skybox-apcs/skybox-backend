@@ -27,10 +27,11 @@ type AppConfig struct {
 	JWTSecret string
 
 	// AWS Config
-	AWSKey    string
-	AWSSecret string
-	AWSBucket string
-	AWSRegion string
+	AWSKey          string
+	AWSSecret       string
+	AWSSessionToken string
+	AWSBucket       string
+	AWSRegion       string
 }
 
 var Config AppConfig = AppConfig{}
@@ -60,9 +61,10 @@ func LoadConfig() {
 	Config.JWTSecret = getEnv("JWT_SECRET_KEY", "secret")
 
 	// AWS Config
-	Config.AWSKey = getEnv("AWS_SECRET_KEY_ID", "")
+	Config.AWSKey = getEnv("AWS_ACCESS_KEY_ID", "")
 	Config.AWSSecret = getEnv("AWS_SECRET_ACCESS_KEY", "")
-	Config.AWSBucket = getEnv("AWS_BUCKET_NAME", "")
+	Config.AWSSessionToken = getEnv("AWS_SESSION_TOKEN", "")
+	Config.AWSBucket = getEnv("AWS_S3_BUCKET_NAME", "")
 	Config.AWSRegion = getEnv("AWS_REGION", "us-east-1")
 }
 

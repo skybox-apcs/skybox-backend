@@ -1,15 +1,33 @@
 package app
 
-type Application struct{}
+import (
+	"skybox-backend/internal/blockserver/storage"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+)
+
+type Application struct {
+	s3Client *s3.Client
+}
 
 func NewApplication() Application {
 	app := &Application{}
+
+	// Connect to AWS S3
+	app.s3Client = storage.NewAWSClient()
+
 	return *app
+}
+
+func (app *Application) CloseAWSClient() {
+	storage.CloseAWSClient()
+	// Close AWS client if needed (no explicit close method for AWS S3 client)
 }
 
 func StartServer() {
 	// Create a new application
-	// application := NewApplication()
+	application := NewApplication() // Uncommented and fixed the function call
+	defer application.CloseAWSClient()
 
 	// Start the server
 	ginServer := NewServer()
