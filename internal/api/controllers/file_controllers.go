@@ -45,11 +45,7 @@ func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 
 	file, err := fc.FileService.GetFileByID(c, fileID)
 	if err != nil {
-		if err.Error() == "file not found" {
-			shared.RespondJson(c, http.StatusNotFound, "error", "File not found", nil)
-			return
-		}
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to get file metadata", nil)
+		c.Error(err)
 		return
 	}
 
@@ -80,11 +76,7 @@ func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 
 	err := fc.FileService.DeleteFile(c, fileID)
 	if err != nil {
-		if err.Error() == "file not found" {
-			shared.RespondJson(c, http.StatusNotFound, "error", "File not found", nil)
-			return
-		}
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to delete file", nil)
+		c.Error(err)
 		return
 	}
 
@@ -126,11 +118,7 @@ func (fc *FileController) RenameFileHandler(c *gin.Context) {
 	// Rename the file using the service
 	err = fc.FileService.RenameFile(c, fileID, requestBody.NewName)
 	if err != nil {
-		if err.Error() == "file not found" {
-			shared.RespondJson(c, http.StatusNotFound, "error", "File not found", nil)
-			return
-		}
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to rename file", nil)
+		c.Error(err)
 		return
 	}
 
@@ -171,11 +159,7 @@ func (fc *FileController) MoveFileHandler(c *gin.Context) {
 	// Move the file using the service
 	err = fc.FileService.MoveFile(c, fileID, requestBody.NewParentID)
 	if err != nil {
-		if err.Error() == "file not found" {
-			shared.RespondJson(c, http.StatusNotFound, "error", "File not found", nil)
-			return
-		}
-		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to move file", nil)
+		c.Error(err)
 		return
 	}
 
