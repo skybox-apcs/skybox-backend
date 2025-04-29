@@ -104,3 +104,29 @@ func GetKeyFromToken(key string, requestToken string, secret string) (string, er
 
 	return claims[key].(string), nil
 }
+
+// CreateSessionToken creates a session token to upload file for the user
+func CreateSessionToken(data map[string]string, secret string, expiry int) (string, error) {
+	// Calculate the expiry date
+	exp := time.Now().Add(time.Duration(expiry) * time.Hour).Unix()
+
+	// Create the claims
+	claims := jwt.MapClaims{
+		"exp": exp,
+	}
+
+	for key, value := range data {
+		claims[key] = value
+	}
+
+	// Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token
+	sessionToken, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", fmt.Errorf("error while signing token: %w", err)
+	}
+
+	return sessionToken, nil
+}
