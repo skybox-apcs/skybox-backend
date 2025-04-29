@@ -39,6 +39,7 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 	// Get the user id from the ctx which passed from middleware
 	// From gin: ctx.GetHeader("x-user-id")
 	userId := ctx.Value("x-user-id").(string)
+	fmt.Printf("Uploader's user ID: %s\n", userId)
 	if userId == "" {
 		return fmt.Errorf("missing user ID in context")
 	}
@@ -62,13 +63,24 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 		fmt.Printf("Uploaded chunk %d of file %s to S3 bucket %s\n", chunkIndex, fileId, configs.Config.AWSBucket)
 	} else {
 		// Save locally (for development/testing purposes)
+		// Create the directory if it doesn't exist
+		localDir := fmt.Sprintf("tmp/%s", userId)
+		err := os.MkdirAll(localDir, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("failed to create local directory: %w", err)
+		}
+
 		localPath := fmt.Sprintf("tmp/%s/%s_%d%s", userId, fileId, chunkIndex, ext)
-		err := os.WriteFile(localPath, buf, 0644)
+		err = os.WriteFile(localPath, buf, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to save chunk locally: %w", err)
 		}
+
 		fmt.Printf("Saved chunk %d of file %s to %s\n", chunkIndex, fileId, localPath)
 	}
+
+	// TODO: Once the chunk is saved, call API Server to update the file status
+	fmt.Printf("Calling API Server to update file status...\n")
 
 	return nil
 }

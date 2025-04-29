@@ -20,8 +20,8 @@ func NewUploadRouters(group *gin.RouterGroup) {
 	uploadGroup := group.Group("/upload")
 	{
 		uploadGroup.POST("/whole/:fileId", uploadController.UploadWholeFileHandler)
-		uploadGroup.POST("/chunk/:fileId", uploadController.UploadChunkHandler)
-		uploadGroup.POST("/chunk/:sessionId/:chunkIndex", uploadController.UploadChunkHandler)
+		uploadGroup.POST("/chunk/:fileId", uploadController.UploadAutoChunkHandler)
+		uploadGroup.POST("/chunk/session/:sessionId/:chunkIndex", uploadController.UploadChunkHandler)
 	}
 
 	// Add any other upload-related routes here

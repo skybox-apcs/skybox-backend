@@ -26,7 +26,7 @@ func NewAWSClient() *s3.Client {
 	fmt.Println("Connecting to AWS S3...")
 
 	if configs.Config.AWSEnabled == false {
-		fmt.Println("AWS S3 is not enabled in the configuration.")
+		fmt.Println("AWS S3 is not enabled in the configuration. Fallback to local storage.")
 		return nil
 	}
 
