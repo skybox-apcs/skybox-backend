@@ -381,6 +381,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 		MimeType:       request.MimeType,
 		IsDeleted:      false,
 		DeletedAt:      nil,
+		Status:         "pending",
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -400,6 +401,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 			Name:           fileMetadata.FileName,
 			MimeType:       fileMetadata.MimeType,
 			Size:           fileMetadata.Size,
+			Status:         fileMetadata.Status,
 			CreatedAt:      fileMetadata.CreatedAt,
 			UpdatedAt:      fileMetadata.UpdatedAt,
 		},

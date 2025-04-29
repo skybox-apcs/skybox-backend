@@ -43,6 +43,7 @@ type FileResponse struct {
 	Name           string    `json:"name" bson:"name"`
 	MimeType       string    `json:"mime_type" bson:"mime_type"`
 	Size           int64     `json:"size" bson:"size"`
+	Status         string    `json:"status" bson:"status"`
 	CreatedAt      time.Time `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" bson:"updated_at"`
 }
