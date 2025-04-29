@@ -77,7 +77,7 @@ func (ac *AuthController) createUserToken(c *gin.Context, user *models.User, tok
 //			@Success		200			{object}	models.LoginResponse	"User authenticated successfully"
 //			@Failure		400			{string}	string	"Invalid request"
 //			@Failure		401			{string}	string	"Invalid credentials"
-//			@Router			/auth/login [post]
+//			@Router			/api/v1/auth/login [post]
 func (ac *AuthController) LoginHandler(c *gin.Context) {
 	// Define the request and response body structs
 	var request models.LoginRequest
@@ -156,7 +156,7 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 //		@Failure		400			{string}	string	"Invalid request"
 //		@Failure		409			{string}	string	"User already exists with the email"
 //		@Failure		500			{string}	string	"Failed to register the user"
-//		@Router			/auth/register [post]
+//		@Router			/api/v1/auth/register [post]
 func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	// Define the request body struct
 	var request models.RegisterRequest
@@ -223,7 +223,7 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 //		@Failure		400			{string}	string	"Invalid request"
 //		@Failure		401			{string}	string	"Invalid refresh token"
 //		@Failure		500			{string}	string	"Failed to refresh the access token"
-//		@Router			/auth/refresh [post]
+//		@Router			/api/v1/auth/refresh [post]
 func (ac *AuthController) RefreshHandler(c *gin.Context) {
 	// Define the request and response body structs
 	var request models.RefreshRequest
@@ -291,13 +291,15 @@ func (ac *AuthController) RefreshHandler(c *gin.Context) {
 //
 //	@Summary		Logs out the user
 //	@Description	Logs out the user and invalidates the refresh token
+//	@Security		Bearer
 //	@Tags			Authentication
 //	@Accept			json
 //	@Produce		json
+//	@Param			request body	models.LogoutRequest	true	"Logout Request"
 //	@Success		200			{string}	string	"User logged out successfully"
 //	@Failure		401			{string}	string	"Unauthorized"
 //	@Failure		500			{string}	string	"Failed to log out the user"
-//	@Router			/auth/logout [post]
+//	@Router			/api/v1/auth/logout [post]
 func (ac *AuthController) LogoutHandler(c *gin.Context) {
 	// Define the request and response body structs
 	var request models.LogoutRequest

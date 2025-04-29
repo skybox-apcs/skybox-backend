@@ -1,10 +1,24 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Skybox is a cloud-based file storage provider similar to Google Drive and Dropbox. It allows users to securely store, manage, and retrieve their files.",
+        "title": "Skybox API and Block Server",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Skybox Support",
+            "url": "None",
+            "email": "None"
+        },
+        "license": {
+            "name": "GNU General Public License v3.0",
+            "url": "https://www.gnu.org/licenses/gpl-3.0.html"
+        },
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/",
     "paths": {
-        "/auth/login": {
+        "/api/v1/auth/login": {
             "post": {
                 "description": "This endpoint authenticates the user by checking the email and password. If the credentials are valid, it generates an access token and a refresh token.",
                 "consumes": [
@@ -50,8 +64,13 @@
                 }
             }
         },
-        "/auth/logout": {
+        "/api/v1/auth/logout": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Logs out the user and invalidates the refresh token",
                 "consumes": [
                     "application/json"
@@ -63,6 +82,17 @@
                     "Authentication"
                 ],
                 "summary": "Logs out the user",
+                "parameters": [
+                    {
+                        "description": "Logout Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LogoutRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "User logged out successfully",
@@ -85,7 +115,7 @@
                 }
             }
         },
-        "/auth/refresh": {
+        "/api/v1/auth/refresh": {
             "post": {
                 "description": "This endpoint validates the refresh token and generates a new access token, allowing the user to continue their session without re-authenticating.",
                 "consumes": [
@@ -137,7 +167,7 @@
                 }
             }
         },
-        "/auth/register": {
+        "/api/v1/auth/register": {
             "post": {
                 "description": "This endpoint registers a new user by creating a new user record in the database.",
                 "consumes": [
@@ -189,8 +219,13 @@
                 }
             }
         },
-        "/files/{fileId}": {
+        "/api/v1/files/{fileId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Get file metadata by file ID. The file ID is a unique identifier for the file in the database. The metadata includes information such as the file name, size, type, and creation date.",
                 "consumes": [
                     "application/json"
@@ -240,6 +275,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Delete a file by its ID. The file is marked as deleted in the database, but not removed from the storage service. This allows for potential recovery in the future.",
                 "consumes": [
                     "application/json"
@@ -289,8 +329,13 @@
                 }
             }
         },
-        "/files/{fileId}/move": {
+        "/api/v1/files/{fileId}/move": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Move a file to a new folder by providing the new parent folder ID.",
                 "consumes": [
                     "application/json"
@@ -349,8 +394,13 @@
                 }
             }
         },
-        "/files/{fileId}/rename": {
+        "/api/v1/files/{fileId}/rename": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.",
                 "consumes": [
                     "application/json"
@@ -409,6 +459,11 @@
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.",
                 "consumes": [
                     "application/json"
@@ -467,8 +522,13 @@
                 }
             }
         },
-        "/folders/{folderId}": {
+        "/api/v1/folders/{folderId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Retrieve detailed metadata for a folder by its ID. Includes information such as folder ID, owner ID, name, parent folder ID, and creation timestamps.",
                 "consumes": [
                     "application/json"
@@ -519,6 +579,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Mark a folder as deleted (move it to the recycle bin). Subfolders and files are not immediately deleted but will also be marked for deletion. After a retention period, they may be permanently deleted.",
                 "consumes": [
                     "application/json"
@@ -563,8 +628,13 @@
                 }
             }
         },
-        "/folders/{folderId}/contents": {
+        "/api/v1/folders/{folderId}/contents": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Retrieve a list of all files and subfolders contained within a specified folder. Useful for browsing the contents of a directory.",
                 "consumes": [
                     "application/json"
@@ -615,8 +685,13 @@
                 }
             }
         },
-        "/folders/{folderId}/create": {
+        "/api/v1/folders/{folderId}/create": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Create a new folder inside a given parent folder. If no parent folder ID is provided, the folder will be created at the root level.",
                 "consumes": [
                     "application/json"
@@ -676,8 +751,13 @@
                 }
             }
         },
-        "/folders/{folderId}/move": {
+        "/api/v1/folders/{folderId}/move": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Move a folder from its current location to another destination folder. The folder's contents will be moved along with it.",
                 "consumes": [
                     "application/json"
@@ -737,8 +817,13 @@
                 }
             }
         },
-        "/folders/{folderId}/rename": {
+        "/api/v1/folders/{folderId}/rename": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
@@ -798,6 +883,11 @@
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
@@ -857,8 +947,13 @@
                 }
             }
         },
-        "/folders/{folderId}/upload": {
+        "/api/v1/folders/{folderId}/upload": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Create a file document in the database for file upload operation.",
                 "consumes": [
                     "application/json"
@@ -918,7 +1013,7 @@
                 }
             }
         },
-        "/hello": {
+        "/api/v1/hello": {
             "get": {
                 "description": "Returns a hello world message",
                 "consumes": [
@@ -941,9 +1036,12 @@
                 }
             }
         },
-        "/user": {
+        "/api/v1/user": {
             "get": {
                 "security": [
+                    {
+                        "Bearer": []
+                    },
                     {
                         "ApiKeyAuth": []
                     }
@@ -968,6 +1066,29 @@
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/hello": {
+            "get": {
+                "description": "Returns a hello world message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Misc"
+                ],
+                "summary": "Returns a hello world message",
+                "responses": {
+                    "200": {
+                        "description": "Hello World",
                         "schema": {
                             "type": "string"
                         }
@@ -1065,10 +1186,16 @@
                 "name": {
                     "type": "string"
                 },
+                "owner_email": {
+                    "type": "string"
+                },
                 "owner_id": {
                     "type": "string"
                 },
-                "parent_id": {
+                "owner_user_name": {
+                    "type": "string"
+                },
+                "parent_folder_id": {
                     "type": "string"
                 },
                 "size": {
@@ -1118,6 +1245,38 @@
                 }
             }
         },
+        "models.FolderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_email": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "owner_user_name": {
+                    "type": "string"
+                },
+                "parent_folder_id": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/models.FolderStat"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "models.FolderStat": {
             "type": "object",
             "properties": {
@@ -1138,13 +1297,13 @@
                 "file_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.File"
+                        "$ref": "#/definitions/models.FileResponse"
                     }
                 },
                 "folder_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Folder"
+                        "$ref": "#/definitions/models.FolderResponse"
                     }
                 }
             }
@@ -1189,6 +1348,17 @@
                 },
                 "username": {
                     "description": "Username",
+                    "type": "string"
+                }
+            }
+        },
+        "models.LogoutRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -1359,5 +1529,17 @@
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Use \"Bearer {your_token}\" to authenticate requests.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI Documentation",
+        "url": "https://swagger.io/resources/open-api/"
     }
 }

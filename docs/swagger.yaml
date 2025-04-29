@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   models.CreateFolderRequest:
     properties:
@@ -58,9 +59,13 @@ definitions:
         type: string
       name:
         type: string
+      owner_email:
+        type: string
       owner_id:
         type: string
-      parent_id:
+      owner_user_name:
+        type: string
+      parent_folder_id:
         type: string
       size:
         type: integer
@@ -94,6 +99,27 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.FolderResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner_email:
+        type: string
+      owner_id:
+        type: string
+      owner_user_name:
+        type: string
+      parent_folder_id:
+        type: string
+      stats:
+        $ref: '#/definitions/models.FolderStat'
+      updated_at:
+        type: string
+    type: object
   models.FolderStat:
     properties:
       total_files:
@@ -107,11 +133,11 @@ definitions:
     properties:
       file_list:
         items:
-          $ref: '#/definitions/models.File'
+          $ref: '#/definitions/models.FileResponse'
         type: array
       folder_list:
         items:
-          $ref: '#/definitions/models.Folder'
+          $ref: '#/definitions/models.FolderResponse'
         type: array
     type: object
   models.LoginRequest:
@@ -144,6 +170,13 @@ definitions:
       username:
         description: Username
         type: string
+    type: object
+  models.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
     type: object
   models.MoveFileRequest:
     properties:
@@ -257,10 +290,25 @@ definitions:
       username:
         type: string
     type: object
+externalDocs:
+  description: OpenAPI Documentation
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: None
+    name: Skybox Support
+    url: None
+  description: Skybox is a cloud-based file storage provider similar to Google Drive
+    and Dropbox. It allows users to securely store, manage, and retrieve their files.
+  license:
+    name: GNU General Public License v3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Skybox API and Block Server
+  version: "1.0"
 paths:
-  /auth/login:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
@@ -292,11 +340,18 @@ paths:
       summary: Authenticates the user
       tags:
       - Authentication
-  /auth/logout:
+  /api/v1/auth/logout:
     post:
       consumes:
       - application/json
       description: Logs out the user and invalidates the refresh token
+      parameters:
+      - description: Logout Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LogoutRequest'
       produces:
       - application/json
       responses:
@@ -312,10 +367,12 @@ paths:
           description: Failed to log out the user
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Logs out the user
       tags:
       - Authentication
-  /auth/refresh:
+  /api/v1/auth/refresh:
     post:
       consumes:
       - application/json
@@ -350,7 +407,7 @@ paths:
       summary: Validate and refresh the access token via refresh token
       tags:
       - Authentication
-  /auth/register:
+  /api/v1/auth/register:
     post:
       consumes:
       - application/json
@@ -385,7 +442,7 @@ paths:
       summary: Registers a new user
       tags:
       - Authentication
-  /files/{fileId}:
+  /api/v1/files/{fileId}:
     delete:
       consumes:
       - application/json
@@ -418,6 +475,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Delete a file
       tags:
       - Files
@@ -453,10 +512,12 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Get file metadata
       tags:
       - Files
-  /files/{fileId}/move:
+  /api/v1/files/{fileId}/move:
     put:
       consumes:
       - application/json
@@ -494,10 +555,12 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Move a file to a new folder
       tags:
       - Files
-  /files/{fileId}/rename:
+  /api/v1/files/{fileId}/rename:
     patch:
       consumes:
       - application/json
@@ -536,6 +599,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Rename a file
       tags:
       - Files
@@ -577,10 +642,12 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Rename a file
       tags:
       - Files
-  /folders/{folderId}:
+  /api/v1/folders/{folderId}:
     delete:
       consumes:
       - application/json
@@ -610,6 +677,8 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Soft-delete a folder
       tags:
       - Folders
@@ -645,10 +714,12 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Get metadata of a specific folder
       tags:
       - Folders
-  /folders/{folderId}/contents:
+  /api/v1/folders/{folderId}/contents:
     get:
       consumes:
       - application/json
@@ -681,10 +752,12 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: List all files and folders inside a folder
       tags:
       - Folders
-  /folders/{folderId}/create:
+  /api/v1/folders/{folderId}/create:
     post:
       consumes:
       - application/json
@@ -723,10 +796,12 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Create a new folder inside a specified parent folder
       tags:
       - Folders
-  /folders/{folderId}/move:
+  /api/v1/folders/{folderId}/move:
     put:
       consumes:
       - application/json
@@ -765,10 +840,12 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Move a folder to a new parent folder
       tags:
       - Folders
-  /folders/{folderId}/rename:
+  /api/v1/folders/{folderId}/rename:
     patch:
       consumes:
       - application/json
@@ -807,6 +884,8 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Rename a specific folder
       tags:
       - Folders
@@ -848,10 +927,12 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Rename a specific folder
       tags:
       - Folders
-  /folders/{folderId}/upload:
+  /api/v1/folders/{folderId}/upload:
     post:
       consumes:
       - application/json
@@ -889,11 +970,13 @@ paths:
           description: Internal server error.
           schema:
             type: string
+      security:
+      - Bearer: []
       summary: Upload metadata and create a file metadata in the database before upload
         operation.
       tags:
       - Files
-  /hello:
+  /api/v1/hello:
     get:
       consumes:
       - application/json
@@ -908,7 +991,7 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
-  /user:
+  /api/v1/user:
     get:
       consumes:
       - application/json
@@ -925,8 +1008,30 @@ paths:
           schema:
             type: string
       security:
+      - Bearer: []
       - ApiKeyAuth: []
       summary: Returns the user information
       tags:
       - User
+  /hello:
+    get:
+      consumes:
+      - application/json
+      description: Returns a hello world message
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hello World
+          schema:
+            type: string
+      summary: Returns a hello world message
+      tags:
+      - Misc
+securityDefinitions:
+  Bearer:
+    description: Use "Bearer {your_token}" to authenticate requests.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

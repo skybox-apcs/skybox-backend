@@ -31,6 +31,7 @@ func NewFolderController(folderService *services.FolderService, fileService *ser
 //
 // @Summary Get metadata of a specific folder
 // @Description Retrieve detailed metadata for a folder by its ID. Includes information such as folder ID, owner ID, name, parent folder ID, and creation timestamps.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -39,7 +40,7 @@ func NewFolderController(folderService *services.FolderService, fileService *ser
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId} [get]
+// @Router /api/v1/folders/{folderId} [get]
 func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -62,6 +63,7 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 //
 // @Summary Create a new folder inside a specified parent folder
 // @Description Create a new folder inside a given parent folder. If no parent folder ID is provided, the folder will be created at the root level.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -71,7 +73,7 @@ func (fc *FolderController) GetFolderHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request.
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId}/create [post]
+// @Router /api/v1/folders/{folderId}/create [post]
 func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 	// Defune the request body structure
 	var request models.CreateFolderRequest
@@ -135,6 +137,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 //
 // @Summary List all files and folders inside a folder
 // @Description Retrieve a list of all files and subfolders contained within a specified folder. Useful for browsing the contents of a directory.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -143,7 +146,7 @@ func (fc *FolderController) CreateFolderHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId}/contents [get]
+// @Router /api/v1/folders/{folderId}/contents [get]
 func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -203,6 +206,7 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 //
 // @Summary Soft-delete a folder
 // @Description Mark a folder as deleted (move it to the recycle bin). Subfolders and files are not immediately deleted but will also be marked for deletion. After a retention period, they may be permanently deleted.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -210,7 +214,7 @@ func (fc *FolderController) GetContentsHandler(c *gin.Context) {
 // @Success 200 {string} string "Folder deleted successfully."
 // @Failure 400 {string} string "Invalid request."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId} [delete]
+// @Router /api/v1/folders/{folderId} [delete]
 func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -234,6 +238,7 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 //
 // @Summary Rename a specific folder
 // @Description Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -243,8 +248,8 @@ func (fc *FolderController) DeleteFolderHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId}/rename [put]
-// @Router /folders/{folderId}/rename [patch]
+// @Router /api/v1/folders/{folderId}/rename [put]
+// @Router /api/v1/folders/{folderId}/rename [patch]
 func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -278,6 +283,7 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 //
 // @Summary Move a folder to a new parent folder
 // @Description Move a folder from its current location to another destination folder. The folder's contents will be moved along with it.
+// @Security		Bearer
 // @Tags Folders
 // @Accept json
 // @Produce json
@@ -287,7 +293,7 @@ func (fc *FolderController) RenameFolderHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId}/move [put]
+// @Router /api/v1/folders/{folderId}/move [put]
 func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
@@ -321,6 +327,7 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 //
 // @Summary Upload metadata and create a file metadata in the database before upload operation.
 // @Description Create a file document in the database for file upload operation.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -330,7 +337,7 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
-// @Router /folders/{folderId}/upload [post]
+// @Router /api/v1/folders/{folderId}/upload [post]
 func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 	// Get the folder ID from the request parameters
 	folderId := c.Param("folderId")
