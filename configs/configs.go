@@ -27,6 +27,7 @@ type AppConfig struct {
 	JWTSecret string
 
 	// AWS Config
+	AWSEnabled      bool
 	AWSKey          string
 	AWSSecret       string
 	AWSSessionToken string
@@ -61,6 +62,7 @@ func LoadConfig() {
 	Config.JWTSecret = getEnv("JWT_SECRET_KEY", "secret")
 
 	// AWS Config
+	Config.AWSEnabled = getEnv("AWS_ENABLED", "false") == "true"
 	Config.AWSKey = getEnv("AWS_ACCESS_KEY_ID", "")
 	Config.AWSSecret = getEnv("AWS_SECRET_ACCESS_KEY", "")
 	Config.AWSSessionToken = getEnv("AWS_SESSION_TOKEN", "")
