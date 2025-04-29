@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 
+	"skybox-backend/configs"
 	"skybox-backend/internal/blockserver/services"
 	"skybox-backend/internal/shared"
 
@@ -26,15 +28,31 @@ func NewUploadController(uploadService *services.UploadService) *UploadControlle
 	}
 }
 
-const maxWorkers = 5                     // Number of concurrent workers for chunk uploads (TODO: make this configurable)
-const DefaultChunkSize = 5 * 1024 * 1024 // 5MB
-const MaxChunkSize = 100 * 1024 * 1024   // 100MB
+var (
+	maxWorkers       = configs.Config.MaxWorkers       // Number of concurrent workers for chunk uploads
+	DefaultChunkSize = configs.Config.DefaultChunkSize // Default chunk size (5MB)
+	MaxChunkSize     = configs.Config.MaxChunkSize     // Maximum chunk size (50MB)
+)
 
 type UploadChunk struct {
 	Index int    `json:"index"` // Index of the chunk
 	Data  []byte `json:"data"`  // Data of the chunk
 }
 
+// UploadWholeFileHandler godoc
+//
+//	@Summary 		Upload a whole file (without chunking)
+//	@Description 	Upload a whole file (without chunking) to the server. This is a simple upload endpoint that does not require chunking. It is useful for smaller files or when chunking is not needed, i.e., lower than 50MB.
+//	@Tags 			Upload
+//	@Accept 		multipart/form-data
+//	@Produce 		json
+//	@Param 			fileId 	path string true "File ID" default("fileId") example("fileId")
+//	@Param 			file 	formData file true "File" default("file") example("file")
+//	@Success 		200 {string} string "File uploaded successfully"
+//	@Failure 		400 {string} string "Bad Request" "Invalid file ID or Failed to get file from form or file size exceeds the maximum limit"
+//	@Failure 		500 {string} string "Internal Server Error" "Failed to save file"
+//	@Router 		/upload/whole/{fileId} [post]
+//
 // UploadWholeFileHandler handles whole file uploads (not chunked)
 func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	fileId := c.Param("fileId")
@@ -80,6 +98,21 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	})
 }
 
+// UploadAutoChunkHandler godoc
+//
+//	@Summary 		Upload a file in chunks (auto chunking)
+//	@Description 	Upload a file in chunks (auto chunking) to the server. This endpoint automatically splits the file into chunks and uploads them concurrently. It is useful for larger files or when chunking is needed, i.e., larger than 50MB.
+//	@Tags 			Upload
+//	@Accept 		multipart/form-data
+//	@Produce 		json
+//	@Param 			fileId 	path string true "File ID" default("fileId") example("fileId")
+//	@Param 			chunkSize 	query int false "Chunk Size" default(5242880) example(5242880)
+//	@Param 			file 	formData file true "File" default("file") example("file")
+//	@Success 		200 {string} string "File uploaded successfully"
+//	@Failure 		400 {string} string "Bad Request" "Invalid file ID or file size exceeds the maximum limit"
+//	@Failure 		500 {string} string "Internal Server Error" "Failed to save file"
+//	@Router 		/upload/auto-chunk/{fileId} [post]
+//
 // UploadAutoChunkHandler handles whole file uploads and split them into chunks
 func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	// Get the fileID from the query parameters
@@ -92,8 +125,16 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	// Parse chunk size from query or use default
 	chunkSize := DefaultChunkSize
 	if size := c.Query("chunkSize"); size != "" {
-		if parsedSize, err := strconv.Atoi(size); err == nil && parsedSize > 0 && parsedSize <= MaxChunkSize {
-			chunkSize = parsedSize
+		if parsedSize, err := strconv.ParseInt(size, 10, 64); err == nil {
+			if parsedSize > 0 && parsedSize <= MaxChunkSize {
+				chunkSize = parsedSize
+			} else {
+				shared.ErrorJSON(c, http.StatusBadRequest, "Invalid chunk size")
+				return
+			}
+		} else {
+			shared.ErrorJSON(c, http.StatusBadRequest, "Invalid chunk size")
+			return
 		}
 	}
 
@@ -108,6 +149,8 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	fileExt := filepath.Ext(fileName)
 	totalSize := header.Size
 	totalChunks := int(math.Ceil(float64(totalSize) / float64(chunkSize)))
+
+	fmt.Printf("Total size: %d, Chunk size: %d, Total chunks: %d\n", totalSize, chunkSize, totalChunks)
 
 	// Worker pool for concurrent chunk uploads
 	uploadChan := make(chan UploadChunk, totalChunks)
