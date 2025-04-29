@@ -79,6 +79,14 @@ func (m *MockUserTokenRepository) CreateUserToken(ctx context.Context, token *mo
 	return args.Error(0)
 }
 
+func (m *MockUserTokenRepository) FindUserToken(ctx context.Context, token string) (*models.UserToken, error) {
+	args := m.Called(ctx, token)
+	if userToken, ok := args.Get(0).(*models.UserToken); ok {
+		return userToken, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockUserTokenRepository) DeleteUserToken(ctx context.Context, tokenID string) error {
 	args := m.Called(ctx, tokenID)
 	return args.Error(0)
