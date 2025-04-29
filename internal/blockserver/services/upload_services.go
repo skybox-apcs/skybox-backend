@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"skybox-backend/configs"
@@ -40,19 +41,20 @@ func NewUploadService() *UploadService {
 	}
 }
 
-// FetchFileObject is a helper function to retrieve FileObject from API Server
-// This helper function would be used in the controller to fetch the file object from the API server
-func (us *UploadService) FetchFileObject(ctx *gin.Context, fileId string) (*models.FileResponse, error) {
-	// Define the API Server URL
-	apiServerURL := fmt.Sprintf("%s/api/v1/files/%s", us.baseURL, fileId)
-
+func requestAPIServer(ctx *gin.Context, method string, url string, body interface{}) (*http.Response, error) {
 	// Create an HTTP client with a timeout
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
+	// Create the request body
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the HTTP request
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiServerURL, nil)
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
@@ -61,17 +63,33 @@ func (us *UploadService) FetchFileObject(ctx *gin.Context, fileId string) (*mode
 	headerToken := ctx.GetHeader("Authorization")
 	req.Header.Set("Authorization", headerToken)
 
-	// Send the HTTP Request
+	// Set the content type to JSON
+	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send HTTP request: %w", err)
 	}
-	defer resp.Body.Close()
 
-	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch file object: %s", resp.Status)
 	}
+
+	return resp, nil
+}
+
+// FetchFileObject is a helper function to retrieve FileObject from API Server
+// This helper function would be used in the controller to fetch the file object from the API server
+func (us *UploadService) FetchFileObject(ctx *gin.Context, fileId string) (*models.FileResponse, error) {
+	// Define the API Server URL
+	apiServerURL := fmt.Sprintf("%s/api/v1/files/%s", us.baseURL, fileId)
+
+	// Create an HTTP request
+	resp, err := requestAPIServer(ctx, http.MethodGet, apiServerURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
 
 	type responseStruct struct {
 		Status  string               `json:"status"`
@@ -110,6 +128,55 @@ func (us *UploadService) ValidateFile(ctx *gin.Context, fileId string) error {
 	return nil
 }
 
+// FetchSessionObject is a helper function to retrieve SessionObject from API Server
+// This helper function would be used in the controller to fetch the file object from the API server
+func (us *UploadService) FetchSessionObject(ctx *gin.Context, sessionToken string) (*models.UploadSession, error) {
+	// Define the API Server URL
+	apiServerURL := fmt.Sprintf("%s/api/v1/upload/%s", us.baseURL, sessionToken)
+
+	// Create an HTTP request
+	resp, err := requestAPIServer(ctx, http.MethodGet, apiServerURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	type responseStruct struct {
+		Status  string                `json:"status"`
+		Message string                `json:"message"`
+		Data    *models.UploadSession `json:"data"`
+	}
+
+	response := &responseStruct{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return response.Data, nil
+}
+
+func (us *UploadService) ValidateSession(ctx *gin.Context, sessionId string, chunkIndex int) (string, error) {
+	// Fetch the session metadata from the API Server
+	session, err := us.FetchSessionObject(ctx, sessionId)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch session object: %w", err)
+	}
+
+	// Get the user ID from the context
+	userId, ok := ctx.Value("x-user-id").(string)
+	if !ok || userId != session.UserID.Hex() {
+		return "", fmt.Errorf("user ID does not match the session owner")
+	}
+
+	// Check if the chunk in the session.ChunkList or not
+	if slices.Contains(session.ChunkList, chunkIndex) {
+		return "", fmt.Errorf("chunk %d already exists in the session", chunkIndex)
+	}
+
+	return session.FileID.Hex(), nil
+}
+
 // SaveChunk is a helper function to save a chunk of the file
 // It would upload the chunk to S3 if in production or save it locally if in development
 // Key format: `<userId>/<fileId>_<chunkIndex>`
@@ -125,7 +192,7 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 
 	if configs.Config.AWSEnabled {
 		// Save to S3
-		key := fmt.Sprintf("%s/%s_%d%s", userId, fileId, chunkIndex, ext)
+		key := fmt.Sprintf("%s/%s_%d", userId, fileId, chunkIndex)
 		_, err := us.s3Client.PutObject(
 			context.TODO(),
 			&s3.PutObjectInput{
@@ -149,7 +216,7 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 			return fmt.Errorf("failed to create local directory: %w", err)
 		}
 
-		localPath := fmt.Sprintf("tmp/%s/%s_%d%s", userId, fileId, chunkIndex, ext)
+		localPath := fmt.Sprintf("tmp/%s/%s_%d", userId, fileId, chunkIndex)
 		err = os.WriteFile(localPath, buf, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to save chunk locally: %w", err)
@@ -164,21 +231,36 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 	return nil
 }
 
-// SaveChunkFromSession is a helper function to save a chunk of the file from a session
-func (us *UploadService) SaveChunkFromSession(ctx context.Context, sessionId string, chunkIndex int, buf []byte) error {
-	// Get the user id from the ctx which passed from middleware
-	// From gin: ctx.GetHeader("x-user-id")
-	userId := ctx.Value("x-user-id").(string)
-	if userId == "" {
-		return fmt.Errorf("missing user ID in context")
+func (us *UploadService) UpdateSessionRecord(ctx *gin.Context, sessionToken string, chunkIndex int) error {
+	// Define the API Server URL
+	apiServerURL := fmt.Sprintf("%s/api/v1/upload/%s", us.baseURL, sessionToken)
+
+	// Create an HTTP request
+	var requestBody = struct {
+		ChunkNumber int `json:"chunk_number"`
+	}{
+		ChunkNumber: chunkIndex,
 	}
 
-	if configs.Config.AWSEnabled {
-		// Save to S3
+	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
 
-	} else {
-		// Save locally (for development/testing purposes)
+	type responseStruct struct {
+		Status  string      `json:"status"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data"`
+	}
 
+	response := &responseStruct{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	if response.Status != "success" {
+		return fmt.Errorf("failed to update session record: %s", response.Message)
 	}
 
 	return nil
