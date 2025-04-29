@@ -11,8 +11,24 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// Statically save the AWS S3 client for reuse
+var s3Client *s3.Client
+
+// GetS3Client returns the AWS S3 client
+func GetS3Client() *s3.Client {
+	if s3Client == nil {
+		s3Client = NewAWSClient()
+	}
+	return s3Client
+}
+
 func NewAWSClient() *s3.Client {
 	fmt.Println("Connecting to AWS S3...")
+
+	if configs.Config.AWSEnabled == false {
+		fmt.Println("AWS S3 is not enabled in the configuration.")
+		return nil
+	}
 
 	// Load AWS configuration from environment variables or config file
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

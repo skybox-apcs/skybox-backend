@@ -1,6 +1,7 @@
 package app
 
 import (
+	"skybox-backend/configs"
 	"skybox-backend/internal/blockserver/storage"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -14,7 +15,10 @@ func NewApplication() Application {
 	app := &Application{}
 
 	// Connect to AWS S3
-	app.s3Client = storage.NewAWSClient()
+	app.s3Client = storage.GetS3Client()
+	if app.s3Client == nil && configs.Config.AWSEnabled {
+		panic("Failed to create AWS S3 client")
+	}
 
 	return *app
 }
