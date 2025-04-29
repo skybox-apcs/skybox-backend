@@ -209,7 +209,7 @@ func (fr *folderRepository) GetFolderResponseListInFolder(ctx context.Context, f
 	defer cursor.Close(ctx)
 
 	// Iterate through the cursor and decode each document into a slice of Folder
-	if cursor.All(ctx, &folderResponse); err != nil {
+	if err := cursor.All(ctx, &folderResponse); err != nil {
 		return nil, err
 	}
 
@@ -283,6 +283,7 @@ func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, fol
 			"$match": bson.M{
 				"parent_folder_id": folderIDHex,
 				"is_deleted":       false,
+				"status":           "uploaded", // The file must be uploaded
 			},
 		},
 		{
@@ -322,7 +323,7 @@ func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, fol
 	defer cursor.Close(ctx)
 
 	// Iterate through the cursor and decode each document into a slice of FileResponse
-	if cursor.All(ctx, &fileResponses); err != nil {
+	if err := cursor.All(ctx, &fileResponses); err != nil {
 		return nil, err
 	}
 

@@ -98,5 +98,9 @@ func GetKeyFromToken(key string, requestToken string, secret string) (string, er
 		return "", fmt.Errorf("error while getting claims from token")
 	}
 
+	if claims[key] == nil {
+		return "", fmt.Errorf("key %s not found in token", key)
+	}
+
 	return claims[key].(string), nil
 }
