@@ -1,7 +1,6 @@
 package configs
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -81,9 +80,6 @@ func LoadConfig() {
 
 	// AWS Config
 	configAWS()
-
-	// Print Configs
-	fmt.Printf("Loaded Config: %+v\n", Config)
 }
 
 func configAPIServer() {

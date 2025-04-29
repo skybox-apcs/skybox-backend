@@ -17,7 +17,6 @@ func NewApplication() Application {
 
 	// Connect to MongoDB
 	app.Mongo = NewMongoDatabase()
-	fmt.Println("Connected to MongoDB")
 
 	return *app
 }
@@ -36,7 +35,6 @@ func StartServer() {
 	db := application.Mongo.Database(configs.Config.MongoDBName)
 
 	// Setup the DB Indexes
-	CreateIndexes(db)
 	if err := CreateIndexes(db); err != nil {
 		panic(err)
 	}

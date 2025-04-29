@@ -97,8 +97,8 @@ func CreateIndexes(db *mongo.Database) error {
 		if err != nil {
 			return fmt.Errorf("failed to create indexes for collection %s: %v", collectionName, err)
 		}
-		fmt.Printf("Indexes created for collection %s\n", collectionName)
 	}
+	fmt.Printf("Indexes created for all collection.\n")
 
 	return nil
 }
