@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"skybox-backend/configs"
+	"skybox-backend/internal/blockserver/models"
 	"skybox-backend/internal/blockserver/services"
 	"skybox-backend/internal/shared"
 
@@ -37,6 +39,32 @@ var (
 type UploadChunk struct {
 	Index int    `json:"index"` // Index of the chunk
 	Data  []byte `json:"data"`  // Data of the chunk
+}
+
+func parseContentRange(header string) (start, end, total int64, err error) {
+	if !strings.HasPrefix(header, "bytes ") {
+		return 0, 0, 0, fmt.Errorf("invalid Content-Range prefix")
+	}
+	parts := strings.Split(strings.TrimPrefix(header, "bytes "), "/")
+	if len(parts) != 2 {
+		return 0, 0, 0, fmt.Errorf("invalid Content-Range format")
+	}
+
+	rangePart := strings.Split(parts[0], "-")
+	if len(rangePart) != 2 {
+		return 0, 0, 0, fmt.Errorf("invalid byte range")
+	}
+
+	start, err = strconv.ParseInt(rangePart[0], 10, 64)
+	if err != nil {
+		return
+	}
+	end, err = strconv.ParseInt(rangePart[1], 10, 64)
+	if err != nil {
+		return
+	}
+	total, err = strconv.ParseInt(parts[1], 10, 64)
+	return
 }
 
 // UploadWholeFileHandler godoc
@@ -100,10 +128,13 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	}
 
 	// Return success response
-	shared.SuccessJSON(c, http.StatusOK, "File uploaded successfully", gin.H{
-		"fileId":   fileId,
-		"fileName": fileName,
-	})
+	response := &models.NonResumableUploadResponse{
+		FileID:     fileId,
+		FileName:   fileName,
+		FileSize:   header.Size,
+		ChunkCount: 1,
+	}
+	shared.SuccessJSON(c, http.StatusOK, "File uploaded successfully", response)
 }
 
 // UploadAutoChunkHandler godoc
@@ -225,60 +256,70 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	}
 
 	// Return success response
-	shared.SuccessJSON(c, http.StatusOK, "File uploaded successfully", gin.H{
-		"fileName":   fileName,
-		"chunkCount": chunkIndex + 1,
-	})
+	response := &models.NonResumableUploadResponse{
+		FileID:     fileId,
+		FileName:   fileName,
+		FileSize:   totalSize,
+		ChunkCount: totalChunks,
+	}
+	shared.SuccessJSON(c, http.StatusOK, "File uploaded successfully", response)
 }
 
-// StartUploadSessionHandler godoc
+// UploadChunkHandler godoc
 //
-// StartUploadSessionHandler start the upload resumable session, return sessionID to the user
-func (uc *UploadController) StartUploadSessionHandler(c *gin.Context) {
-}
-
-// UploadChunkHandler handles chunk uploads
+// UploadChunkHandler handles chunk uploads to a resumable session. Using the sessionId and Content-Range header to identify the chunk and its size.
+// The chunk is saved to the server or any other storage.
+// It is useful for large files that need to be uploaded in chunks, especially when the upload can be interrupted and resumed later.
 func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
-	sessionID := c.Query("sessionID")
-	chunkIndexStr := c.Query("chunkIndex")
-
-	// Validate sessionID and chunkIndex
-	if sessionID == "" {
+	sessionToken := c.Param("sessionToken")
+	if sessionToken == "" {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Missing session ID")
 		return
 	}
 
-	chunkIndex, err := strconv.Atoi(chunkIndexStr)
+	// Get the Content-Range header to determine the chunk index and size
+	contentRange := c.GetHeader("Content-Range")
+	start, end, _, err := parseContentRange(contentRange)
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid chunk index")
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid Content-Range header "+err.Error())
 		return
 	}
 
-	file, header, err := c.Request.FormFile("file")
+	chunkIndex := int(start / DefaultChunkSize)
+	fileId, err := uc.UploadService.ValidateSession(c, sessionToken, chunkIndex)
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusBadRequest, "Failed to get file from form")
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid session ID "+err.Error())
 		return
 	}
-	defer file.Close()
 
-	buf := new(bytes.Buffer)
-	if _, err := io.Copy(buf, file); err != nil {
-		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to read file")
+	// Read the chunk data from the request body
+	chunkData, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to read chunk data "+err.Error())
+		return
+	}
+	defer c.Request.Body.Close()
+
+	fmt.Printf("Chunk index: %d, Start: %d, End: %d, Size: %d, Actual Size: %d\n", chunkIndex, start, end, int(end-start+1), len(chunkData))
+	if len(chunkData) != int(end-start+1) {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Chunk size mismatch")
 		return
 	}
 
 	// Save the chunk to S3 or any other storage
-	err = uc.UploadService.SaveChunkFromSession(c, sessionID, chunkIndex, buf.Bytes())
+	err = uc.UploadService.SaveChunk(c, fileId, "", "", chunkIndex, chunkData)
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk")
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk "+err.Error())
+		return
+	}
+
+	// Update the session record in the database
+	err = uc.UploadService.UpdateSessionRecord(c, sessionToken, chunkIndex)
+	if err != nil {
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to update session record "+err.Error())
 		return
 	}
 
 	// Return success response
-	shared.SuccessJSON(c, http.StatusOK, "Chunk uploaded successfully", gin.H{
-		"sessionID":  sessionID,
-		"chunkIndex": chunkIndexStr,
-		"chunkSize":  buf.Len(),
-		"fileName":   header.Filename,
-	})
+	shared.SuccessJSON(c, http.StatusOK, "Chunk uploaded successfully", nil)
 }

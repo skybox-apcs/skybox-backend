@@ -19,9 +19,23 @@ func NewUploadRouters(group *gin.RouterGroup) {
 	// Create a new group for the upload routes
 	uploadGroup := group.Group("/upload")
 	{
+		// Non-resumable upload
 		uploadGroup.POST("/whole/:fileId", uploadController.UploadWholeFileHandler)
-		uploadGroup.POST("/chunk/:fileId", uploadController.UploadAutoChunkHandler)
-		uploadGroup.POST("/chunk/session/:sessionId/:chunkIndex", uploadController.UploadChunkHandler)
+		uploadGroup.POST("/chunked/:fileId", uploadController.UploadAutoChunkHandler)
+
+		// Resumable upload
+		// 1. Start a new session
+		// uploadGroup.POST("/session/start", nil)
+		// 2. Upload a chunk to a resumable session
+		uploadGroup.POST("/session/:sessionToken/chunk", uploadController.UploadChunkHandler)
+		// 3. Get the status of a resumable session
+		uploadGroup.GET("/session/:sessionToken/status", nil)
+
+		// (Optional) Cancel session, merge chunks, etc.
+		uploadGroup.POST("/session/:sessionToken/complete", nil)
+		uploadGroup.DELETE("/session/:sessionToken", nil)
+
+		uploadGroup.POST("/session/:sessionToken/:chunkIndex", uploadController.UploadChunkHandler)
 	}
 
 	// Add any other upload-related routes here
