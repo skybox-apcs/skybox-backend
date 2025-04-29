@@ -37,6 +37,19 @@ func (utr *userTokenRepository) CreateUserToken(ctx context.Context, userToken *
 	return nil
 }
 
+// FindUserToken retrieves a user token by token
+func (utr *userTokenRepository) FindUserToken(ctx context.Context, token string) (*models.UserToken, error) {
+	collection := utr.database.Collection(utr.collection)
+
+	userToken := &models.UserToken{}
+	err := collection.FindOne(ctx, bson.M{"token": token}).Decode(userToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return userToken, nil
+}
+
 // GetUserTokenByID retrieves a user token by ID
 func (utr *userTokenRepository) GetUserTokenByID(ctx context.Context, id string) (*models.UserToken, error) {
 	collection := utr.database.Collection(utr.collection)

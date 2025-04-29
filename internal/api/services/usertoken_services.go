@@ -26,6 +26,14 @@ func (uts *UserTokenService) CreateUserToken(ctx context.Context, userToken *mod
 	return uts.userTokenRepository.CreateUserToken(ctx, userToken)
 }
 
+// FindUserToken retrieves a user token by its token string
+func (uts *UserTokenService) FindUserToken(ctx context.Context, token string) (*models.UserToken, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return uts.userTokenRepository.FindUserToken(ctx, token)
+}
+
 // GetUserTokenByID retrieves a user token by its ID
 func (uts *UserTokenService) GetUserTokenByID(ctx context.Context, userTokenID string) (*models.UserToken, error) {
 	ctx, cancel := context.WithCancel(ctx)
