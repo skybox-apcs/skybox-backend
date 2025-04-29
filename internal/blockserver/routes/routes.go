@@ -32,6 +32,9 @@ func SetupRouter(gin *gin.Engine) *gin.Engine {
 
 	{
 		v1.GET("/protected/hello", controllers.HelloWorldHandler)
+
+		// Upload routes
+		NewUploadRouters(v1)
 	}
 
 	return gin

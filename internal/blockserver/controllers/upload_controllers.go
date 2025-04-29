@@ -3,9 +3,11 @@ package controllers
 import (
 	"bytes"
 	"io"
+	"math"
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"skybox-backend/internal/blockserver/services"
 	"skybox-backend/internal/shared"
@@ -24,8 +26,14 @@ func NewUploadController(uploadService *services.UploadService) *UploadControlle
 	}
 }
 
+const maxWorkers = 5                     // Number of concurrent workers for chunk uploads (TODO: make this configurable)
 const DefaultChunkSize = 5 * 1024 * 1024 // 5MB
 const MaxChunkSize = 100 * 1024 * 1024   // 100MB
+
+type UploadChunk struct {
+	Index int    `json:"index"` // Index of the chunk
+	Data  []byte `json:"data"`  // Data of the chunk
+}
 
 // UploadWholeFileHandler handles whole file uploads (not chunked)
 func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
@@ -42,6 +50,12 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	}
 	defer file.Close()
 
+	// Check if the fild is too large
+	if header.Size > MaxChunkSize {
+		shared.ErrorJSON(c, http.StatusBadRequest, "File size exceeds the maximum limit")
+		return
+	}
+
 	// Save the file as-is to S3 or any other storage
 	buf := new(bytes.Buffer)
 	if _, err := io.Copy(buf, file); err != nil {
@@ -55,7 +69,7 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	// Save the file to S3 or any other storage
 	err = uc.UploadService.SaveChunk(c, fileId, fileName, ext, 0, buf.Bytes())
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save file")
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save file"+err.Error())
 		return
 	}
 
@@ -66,7 +80,7 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	})
 }
 
-// UploadAutoChunkHandler handles whoel file uploads and split them into chunks
+// UploadAutoChunkHandler handles whole file uploads and split them into chunks
 func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	// Get the fileID from the query parameters
 	fileId := c.Param("fileId")
@@ -83,7 +97,7 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 		}
 	}
 
-	// Get file from form
+	// Get file from form data
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Failed to get file from form")
@@ -91,38 +105,65 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	defer file.Close()
 
 	fileName := header.Filename
-	ext := filepath.Ext(fileName)
+	fileExt := filepath.Ext(fileName)
+	totalSize := header.Size
+	totalChunks := int(math.Ceil(float64(totalSize) / float64(chunkSize)))
 
-	// Read and split file into chunks
-	buf := make([]byte, chunkSize)
+	// Worker pool for concurrent chunk uploads
+	uploadChan := make(chan UploadChunk, totalChunks)
+	var wg sync.WaitGroup
+
+	for i := 0; i < maxWorkers; i++ {
+		go func() {
+			for chunk := range uploadChan {
+				// Save each chunk to S3 or any other storage
+				err := uc.UploadService.SaveChunk(c, fileId, fileName, fileExt, chunk.Index, chunk.Data)
+				if err != nil {
+					shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk"+err.Error())
+					return
+				}
+				// Signal that the upload is done
+				wg.Done()
+			}
+		}()
+	}
+
+	// Read the file and split it into chunks
 	chunkIndex := 0
 	for {
+		buf := make([]byte, chunkSize)
 		n, err := io.ReadFull(file, buf)
-		// If the error is io.EOF, it means we reached the end of the file
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			if n > 0 {
-				// Save the last chunk
-				err := uc.UploadService.SaveChunk(c, fileId, fileName, ext, chunkIndex, buf[:n])
-				if err != nil {
-					shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk")
-					return
+				wg.Add(1)
+				uploadChan <- UploadChunk{
+					Index: chunkIndex,
+					Data:  buf[:n],
 				}
 			}
 			break
 		}
 
 		if err != nil {
-			shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to read file")
+			shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to read file"+err.Error())
 			return
 		}
 
-		// Save the chunk to S3 or any other storage
-		err = uc.UploadService.SaveChunk(c, fileId, fileName, ext, chunkIndex, buf[:n])
-		if err != nil {
-			shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk")
-			return
+		// Send chunk to the worker pool
+		wg.Add(1)
+		uploadChan <- UploadChunk{
+			Index: chunkIndex,
+			Data:  buf[:n],
 		}
 		chunkIndex++
+	}
+
+	// Close the channel and wait for all uploads to finish
+	close(uploadChan)
+	wg.Wait()
+	if err := file.Close(); err != nil {
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to close file"+err.Error())
+		return
 	}
 
 	// Return success response
