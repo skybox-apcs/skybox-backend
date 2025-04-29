@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"skybox-backend/internal/api/models"
@@ -60,11 +61,11 @@ func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.F
 	file := &models.File{}
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid file ID: %v", err)
 	}
 
 	// Find the file by ID and isDeleted := false
-	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false, "user_id": userID}).Decode(file)
+	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false, "owner_id": userID}).Decode(file)
 	if err == nil {
 		return file, nil
 	}
@@ -90,7 +91,7 @@ func (fr *fileRepository) DeleteFile(ctx context.Context, id string) error {
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete file: %v", err)
 	}
 
 	return nil
@@ -117,7 +118,7 @@ func (fr *fileRepository) RenameFile(ctx context.Context, id string, newName str
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to rename file: %v", err)
 	}
 
 	return nil
@@ -140,7 +141,7 @@ func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFold
 
 	newParentIDHex, err := primitive.ObjectIDFromHex(newParentFolderID)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid new parent folder ID: %v", err)
 	}
 
 	// Check if the new parent folder ID is exist
@@ -157,7 +158,7 @@ func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFold
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to move file: %v", err)
 	}
 
 	return nil
