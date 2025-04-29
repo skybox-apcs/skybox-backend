@@ -9,13 +9,22 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Skybox Support",
+            "url": "None",
+            "email": "None"
+        },
+        "license": {
+            "name": "GNU General Public License v3.0",
+            "url": "https://www.gnu.org/licenses/gpl-3.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/login": {
+        "/api/v1/auth/login": {
             "post": {
                 "description": "This endpoint authenticates the user by checking the email and password. If the credentials are valid, it generates an access token and a refresh token.",
                 "consumes": [
@@ -61,8 +70,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/logout": {
+        "/api/v1/auth/logout": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Logs out the user and invalidates the refresh token",
                 "consumes": [
                     "application/json"
@@ -74,6 +88,17 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Logs out the user",
+                "parameters": [
+                    {
+                        "description": "Logout Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LogoutRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "User logged out successfully",
@@ -96,7 +121,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/refresh": {
+        "/api/v1/auth/refresh": {
             "post": {
                 "description": "This endpoint validates the refresh token and generates a new access token, allowing the user to continue their session without re-authenticating.",
                 "consumes": [
@@ -148,7 +173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/api/v1/auth/register": {
             "post": {
                 "description": "This endpoint registers a new user by creating a new user record in the database.",
                 "consumes": [
@@ -200,8 +225,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/files/{fileId}": {
+        "/api/v1/files/{fileId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Get file metadata by file ID. The file ID is a unique identifier for the file in the database. The metadata includes information such as the file name, size, type, and creation date.",
                 "consumes": [
                     "application/json"
@@ -251,6 +281,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Delete a file by its ID. The file is marked as deleted in the database, but not removed from the storage service. This allows for potential recovery in the future.",
                 "consumes": [
                     "application/json"
@@ -300,8 +335,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/files/{fileId}/move": {
+        "/api/v1/files/{fileId}/move": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Move a file to a new folder by providing the new parent folder ID.",
                 "consumes": [
                     "application/json"
@@ -360,8 +400,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/files/{fileId}/rename": {
+        "/api/v1/files/{fileId}/rename": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.",
                 "consumes": [
                     "application/json"
@@ -420,6 +465,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.",
                 "consumes": [
                     "application/json"
@@ -478,8 +528,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}": {
+        "/api/v1/folders/{folderId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Retrieve detailed metadata for a folder by its ID. Includes information such as folder ID, owner ID, name, parent folder ID, and creation timestamps.",
                 "consumes": [
                     "application/json"
@@ -530,6 +585,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Mark a folder as deleted (move it to the recycle bin). Subfolders and files are not immediately deleted but will also be marked for deletion. After a retention period, they may be permanently deleted.",
                 "consumes": [
                     "application/json"
@@ -574,8 +634,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}/contents": {
+        "/api/v1/folders/{folderId}/contents": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Retrieve a list of all files and subfolders contained within a specified folder. Useful for browsing the contents of a directory.",
                 "consumes": [
                     "application/json"
@@ -626,8 +691,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}/create": {
+        "/api/v1/folders/{folderId}/create": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Create a new folder inside a given parent folder. If no parent folder ID is provided, the folder will be created at the root level.",
                 "consumes": [
                     "application/json"
@@ -687,8 +757,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}/move": {
+        "/api/v1/folders/{folderId}/move": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Move a folder from its current location to another destination folder. The folder's contents will be moved along with it.",
                 "consumes": [
                     "application/json"
@@ -748,8 +823,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}/rename": {
+        "/api/v1/folders/{folderId}/rename": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
@@ -809,6 +889,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Rename an existing folder by providing its ID and the new name. Only the folder name will be updated; the folder's contents are unaffected.",
                 "consumes": [
                     "application/json"
@@ -868,8 +953,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/folders/{folderId}/upload": {
+        "/api/v1/folders/{folderId}/upload": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Create a file document in the database for file upload operation.",
                 "consumes": [
                     "application/json"
@@ -929,7 +1019,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/hello": {
+        "/api/v1/hello": {
             "get": {
                 "description": "Returns a hello world message",
                 "consumes": [
@@ -952,9 +1042,12 @@ const docTemplate = `{
                 }
             }
         },
-        "/user": {
+        "/api/v1/user": {
             "get": {
                 "security": [
+                    {
+                        "Bearer": []
+                    },
                     {
                         "ApiKeyAuth": []
                     }
@@ -979,6 +1072,29 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/hello": {
+            "get": {
+                "description": "Returns a hello world message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Misc"
+                ],
+                "summary": "Returns a hello world message",
+                "responses": {
+                    "200": {
+                        "description": "Hello World",
                         "schema": {
                             "type": "string"
                         }
@@ -1076,10 +1192,16 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "owner_email": {
+                    "type": "string"
+                },
                 "owner_id": {
                     "type": "string"
                 },
-                "parent_id": {
+                "owner_user_name": {
+                    "type": "string"
+                },
+                "parent_folder_id": {
                     "type": "string"
                 },
                 "size": {
@@ -1129,6 +1251,38 @@ const docTemplate = `{
                 }
             }
         },
+        "models.FolderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_email": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "string"
+                },
+                "owner_user_name": {
+                    "type": "string"
+                },
+                "parent_folder_id": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/models.FolderStat"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "models.FolderStat": {
             "type": "object",
             "properties": {
@@ -1149,13 +1303,13 @@ const docTemplate = `{
                 "file_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.File"
+                        "$ref": "#/definitions/models.FileResponse"
                     }
                 },
                 "folder_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Folder"
+                        "$ref": "#/definitions/models.FolderResponse"
                     }
                 }
             }
@@ -1200,6 +1354,17 @@ const docTemplate = `{
                 },
                 "username": {
                     "description": "Username",
+                    "type": "string"
+                }
+            }
+        },
+        "models.LogoutRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -1370,17 +1535,29 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Use \"Bearer {your_token}\" to authenticate requests.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI Documentation",
+        "url": "https://swagger.io/resources/open-api/"
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Skybox API and Block Server",
+	Description:      "Skybox is a cloud-based file storage provider similar to Google Drive and Dropbox. It allows users to securely store, manage, and retrieve their files.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

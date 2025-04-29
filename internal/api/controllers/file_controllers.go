@@ -26,6 +26,7 @@ func NewFileController(fileService *services.FileService) *FileController {
 //
 // @Summary Get file metadata
 // @Description Get file metadata by file ID. The file ID is a unique identifier for the file in the database. The metadata includes information such as the file name, size, type, and creation date.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -34,7 +35,7 @@ func NewFileController(fileService *services.FileService) *FileController {
 // @Failure 400 {string} string Invalid request body"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /files/{fileId} [get]
+// @Router /api/v1/files/{fileId} [get]
 func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
@@ -57,6 +58,7 @@ func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 //
 // @Summary Delete a file
 // @Description Delete a file by its ID. The file is marked as deleted in the database, but not removed from the storage service. This allows for potential recovery in the future.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -65,7 +67,7 @@ func (fc *FileController) GetFileMetadataHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request body"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /files/{fileId} [delete]
+// @Router /api/v1/files/{fileId} [delete]
 func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
@@ -88,6 +90,7 @@ func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 //
 // @Summary Rename a file
 // @Description Rename a file by providing the new name. Upon renaming, the file's metadata is updated. And when downloading, the file is fetched from the storage service using the new name.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -97,8 +100,8 @@ func (fc *FileController) DeleteFileHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request body"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /files/{fileId}/rename [put]
-// @Router /files/{fileId}/rename [patch]
+// @Router /api/v1/files/{fileId}/rename [put]
+// @Router /api/v1/files/{fileId}/rename [patch]
 func (fc *FileController) RenameFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
@@ -130,6 +133,7 @@ func (fc *FileController) RenameFileHandler(c *gin.Context) {
 //
 // @Summary Move a file to a new folder
 // @Description Move a file to a new folder by providing the new parent folder ID.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -139,7 +143,7 @@ func (fc *FileController) RenameFileHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request body"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /files/{fileId}/move [put]
+// @Router /api/v1/files/{fileId}/move [put]
 func (fc *FileController) MoveFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
