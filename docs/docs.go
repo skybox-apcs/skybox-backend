@@ -1533,7 +1533,60 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/user": {
+        "/upload/whole/{fileId}": {
+            "post": {
+                "description": "Upload a whole file (without chunking) to the server. This is a simple upload endpoint that does not require chunking. It is useful for smaller files or when chunking is not needed, i.e., lower than 50MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Upload a whole file (without chunking)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "\"fileId\"",
+                        "example": "\"fileId\"",
+                        "description": "File ID",
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File uploaded successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request\" \"Invalid file ID or file size exceeds the maximum limit",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error\" \"Failed to save file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
             "get": {
                 "security": [
                     {

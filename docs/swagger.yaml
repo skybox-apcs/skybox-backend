@@ -1406,7 +1406,46 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
-  /api/v1/user:
+  /upload/whole/{fileId}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a whole file (without chunking) to the server. This is a
+        simple upload endpoint that does not require chunking. It is useful for smaller
+        files or when chunking is not needed, i.e., lower than 50MB.
+      parameters:
+      - default: '"fileId"'
+        description: File ID
+        example: '"fileId"'
+        in: path
+        name: fileId
+        required: true
+        type: string
+      - description: File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File uploaded successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request" "Invalid file ID or file size exceeds the maximum
+            limit
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error" "Failed to save file
+          schema:
+            type: string
+      summary: Upload a whole file (without chunking)
+      tags:
+      - Upload
+  /user:
     get:
       consumes:
       - application/json
