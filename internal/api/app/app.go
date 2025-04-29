@@ -35,6 +35,12 @@ func StartServer() {
 	// Setup the DB
 	db := application.Mongo.Database(configs.Config.MongoDBName)
 
+	// Setup the DB Indexes
+	CreateIndexes(db)
+	if err := CreateIndexes(db); err != nil {
+		panic(err)
+	}
+
 	// Start the server
 	ginServer := NewServer()
 
