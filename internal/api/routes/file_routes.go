@@ -15,8 +15,9 @@ import (
 func NewFileRouters(db *mongo.Database, group *gin.RouterGroup) {
 	// Create new instance of the repositories
 	fr := repositories.NewFileRepository(db, models.CollectionFiles)
+	usr := repositories.NewUploadSessionRepository(db, models.CollectionUploadSessions)
 	fc := &controllers.FileController{
-		FileService: services.NewFileService(fr),
+		FileService: services.NewFileService(fr, usr),
 	}
 
 	folderRepo := repositories.NewFolderRepository(db, models.CollectionFolders)

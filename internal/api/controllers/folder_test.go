@@ -130,27 +130,61 @@ func (m *MockFileRepository) MoveFile(ctx context.Context, id string, newParentF
 	return args.Error(0)
 }
 
+type MockUploadSessionRepository struct {
+	mock.Mock
+}
+
+func (m *MockUploadSessionRepository) CreateSessionRecord(ctx context.Context, sessionData *models.UploadSession) (*models.UploadSession, error) {
+	args := m.Called(ctx, sessionData)
+	if us, ok := args.Get(0).(*models.UploadSession); ok {
+		return us, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockUploadSessionRepository) GetSessionRecord(ctx context.Context, sessionToken string) (*models.UploadSession, error) {
+	args := m.Called(ctx, sessionToken)
+	if us, ok := args.Get(0).(*models.UploadSession); ok {
+		return us, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockUploadSessionRepository) GetSessionRecordByFileID(ctx context.Context, fileId string) (*models.UploadSession, error) {
+	args := m.Called(ctx, fileId)
+	if us, ok := args.Get(0).(*models.UploadSession); ok {
+		return us, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockUploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int) error {
+	args := m.Called(ctx, sessionToken, chunkNumber)
+	return args.Error(0)
+}
+
 // Setup Mock Services
-func setupMockServices() (*FolderController, *MockFolderRepository, *MockFileRepository) {
+func setupMockServices() (*FolderController, *MockFolderRepository, *MockFileRepository, *MockUploadSessionRepository) {
 	mockFolderRepo := new(MockFolderRepository)
 	mockFileRepo := new(MockFileRepository)
+	mockUSRepository := new(MockUploadSessionRepository)
 
 	folderService := services.NewFolderService(mockFolderRepo)
-	fileService := services.NewFileService(mockFileRepo)
+	fileService := services.NewFileService(mockFileRepo, mockUSRepository)
 
 	folderController := &FolderController{
 		FolderService: folderService,
 		FileService:   fileService,
 	}
 
-	return folderController, mockFolderRepo, mockFileRepo
+	return folderController, mockFolderRepo, mockFileRepo, mockUSRepository
 }
 
 func TestFetchRootFolderContents(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -221,7 +255,7 @@ func TestFetchOtherRootContents(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -263,7 +297,7 @@ func TestRenameFolder_Success(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -308,7 +342,7 @@ func TestRenameFolder_RootFolderError(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -352,7 +386,7 @@ func TestRenameFolder_InvalidPayload(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, _, _ := setupMockServices()
+	folderController, _, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -386,7 +420,7 @@ func TestRenameFolder_OtherUserFolder(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -419,7 +453,7 @@ func TestDeleteFolder_RootFolder(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -457,7 +491,7 @@ func TestDeleteFolder_OtherUserFolder(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -495,7 +529,7 @@ func TestDeleteFolder_Success(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -533,7 +567,7 @@ func TestMoveFolder_Success(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -578,7 +612,7 @@ func TestMoveFolder_RootFolder(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -622,7 +656,7 @@ func TestMoveFolder_OtherUserFolder(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -666,7 +700,7 @@ func TestMoveFolder_InvalidPayload(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, _, _ := setupMockServices()
+	folderController, _, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -711,7 +745,7 @@ func TestCreateFolder_Success(t *testing.T) {
 	})
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, mockFolderRepo, _ := setupMockServices()
+	folderController, mockFolderRepo, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
@@ -770,7 +804,7 @@ func TestCreateFolder_InvalidPayload(t *testing.T) {
 	r := gin.Default()
 	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
 	group := r.Group("/")
-	folderController, _, _ := setupMockServices()
+	folderController, _, _, _ := setupMockServices()
 
 	folderGroup := group.Group("/folders")
 	{
