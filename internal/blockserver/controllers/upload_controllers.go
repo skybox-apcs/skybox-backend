@@ -61,6 +61,14 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 		return
 	}
 
+	// Validate the file
+	err := uc.UploadService.ValidateFile(c, fileId)
+	if err != nil {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid file ID "+err.Error())
+		return
+	}
+
+	// Get file from form data
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Failed to get file from form")
@@ -119,6 +127,13 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	fileId := c.Param("fileId")
 	if fileId == "" {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Missing file ID")
+		return
+	}
+
+	// Validate the file
+	err := uc.UploadService.ValidateFile(c, fileId)
+	if err != nil {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid file ID "+err.Error())
 		return
 	}
 
@@ -214,6 +229,12 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 		"fileName":   fileName,
 		"chunkCount": chunkIndex + 1,
 	})
+}
+
+// StartUploadSessionHandler godoc
+//
+// StartUploadSessionHandler start the upload resumable session, return sessionID to the user
+func (uc *UploadController) StartUploadSessionHandler(c *gin.Context) {
 }
 
 // UploadChunkHandler handles chunk uploads
