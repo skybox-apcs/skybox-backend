@@ -16,9 +16,10 @@ func NewFolderRouters(db *mongo.Database, group *gin.RouterGroup) {
 	// Create new instance of the repositories
 	folderRepo := repositories.NewFolderRepository(db, models.CollectionFolders)
 	fileRepo := repositories.NewFileRepository(db, models.CollectionFiles)
+	uploadSessionRepo := repositories.NewUploadSessionRepository(db, models.CollectionUploadSessions)
 	fc := &controllers.FolderController{
 		FolderService: services.NewFolderService(folderRepo),
-		FileService:   services.NewFileService(fileRepo),
+		FileService:   services.NewFileService(fileRepo, uploadSessionRepo),
 	}
 
 	// Create a new group for the folder routes
