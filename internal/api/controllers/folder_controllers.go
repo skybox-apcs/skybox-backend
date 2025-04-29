@@ -385,7 +385,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 		UpdatedAt:      time.Now(),
 	}
 
-	fileMetadata, err := fc.FileService.UploadFileMetadata(c, file)
+	fileMetadata, uploadURL, err := fc.FileService.UploadFileMetadata(c, file)
 	if err != nil {
 		c.Error(err)
 	}
@@ -403,7 +403,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 			CreatedAt:      fileMetadata.CreatedAt,
 			UpdatedAt:      fileMetadata.UpdatedAt,
 		},
-		UploadURL: "",
+		UploadURL: uploadURL,
 	}
 
 	// Send a success response
