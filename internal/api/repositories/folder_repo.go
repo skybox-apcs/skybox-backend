@@ -13,21 +13,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type folderRepository struct {
+type FolderRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-// NewFolderRepository creates a new instance of the folderRepository
-func NewFolderRepository(db *mongo.Database, collection string) *folderRepository {
-	return &folderRepository{
+// NewFolderRepository creates a new instance of the FolderRepository
+func NewFolderRepository(db *mongo.Database, collection string) *FolderRepository {
+	return &FolderRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
 // CreateFolder creates a new folder
-func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Folder) (*models.Folder, error) {
+func (fr *FolderRepository) CreateFolder(ctx context.Context, folder *models.Folder) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 	userIDValue := ctx.Value("x-user-id-hex") // Get userID from context x-user-id-hex saved before
 	userID, ok := userIDValue.(primitive.ObjectID)
@@ -63,7 +63,7 @@ func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 }
 
 // GetFolderByID retrieves a folder by ID
-func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
+func (fr *FolderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 	userIDValue := ctx.Value("x-user-id-hex")
 	userID, ok := userIDValue.(primitive.ObjectID)
@@ -91,7 +91,7 @@ func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*mode
 }
 
 // GetFolderParentIDByFolderID retrieves the parent folder ID of folder ID
-func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, folderID string) (string, error) {
+func (fr *FolderRepository) GetFolderParentIDByFolderID(ctx context.Context, folderID string) (string, error) {
 	collection := fr.database.Collection(fr.collection)
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -112,7 +112,7 @@ func (fr *folderRepository) GetFolderParentIDByFolderID(ctx context.Context, fol
 }
 
 // GetFolderContents retrieves the contents of a folder by ID
-func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID string) ([]*models.Folder, error) {
+func (fr *FolderRepository) GetFolderListInFolder(ctx context.Context, folderID string) ([]*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 
 	// Get the current folder and check if the user has permission to access the folder
@@ -153,7 +153,7 @@ func (fr *folderRepository) GetFolderListInFolder(ctx context.Context, folderID 
 // SELECT * FROM folders f
 // JOIN users u ON f.owner_id = u.id
 // WHERE f.parent_folder_id = folderID AND f.is_deleted = false
-func (fr *folderRepository) GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*models.FolderResponse, error) {
+func (fr *FolderRepository) GetFolderResponseListInFolder(ctx context.Context, folderID string) ([]*models.FolderResponse, error) {
 	collection := fr.database.Collection(fr.collection)
 
 	// Decode the results into a slice of FileResponse
@@ -225,7 +225,7 @@ func (fr *folderRepository) GetFolderResponseListInFolder(ctx context.Context, f
 }
 
 // GetFileListInFolder retrieves the files in a folder by ID
-func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
+func (fr *FolderRepository) GetFileListInFolder(ctx context.Context, folderID string) ([]*models.File, error) {
 	collection := fr.database.Collection(models.CollectionFiles)
 
 	// Get the current folder and check if the user has permission to access the folder
@@ -267,7 +267,7 @@ func (fr *folderRepository) GetFileListInFolder(ctx context.Context, folderID st
 // FROM files f
 // JOIN users u ON f.owner_id = u.id
 // WHERE f.parent_folder_id = folderID AND f.is_deleted = false
-func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*models.FileResponse, error) {
+func (fr *FolderRepository) GetFileResponseListInFolder(ctx context.Context, folderID string) ([]*models.FileResponse, error) {
 	folderCollection := fr.database.Collection(models.CollectionFiles)
 
 	// Decode the results into a slice of FileResponse
@@ -338,7 +338,7 @@ func (fr *folderRepository) GetFileResponseListInFolder(ctx context.Context, fol
 	return fileResponses, nil
 }
 
-func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
+func (fr *FolderRepository) DeleteFolder(ctx context.Context, id string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -367,7 +367,7 @@ func (fr *folderRepository) DeleteFolder(ctx context.Context, id string) error {
 	return err
 }
 
-func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName string) error {
+func (fr *FolderRepository) RenameFolder(ctx context.Context, id string, newName string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -395,7 +395,7 @@ func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName
 	return err
 }
 
-func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParentID string) error {
+func (fr *FolderRepository) MoveFolder(ctx context.Context, id string, newParentID string) error {
 	collection := fr.database.Collection(fr.collection)
 	userIDValue := ctx.Value("x-user-id-hex")
 	userID, ok := userIDValue.(primitive.ObjectID)

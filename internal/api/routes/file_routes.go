@@ -1,24 +1,15 @@
 package routes
 
 import (
-	"skybox-backend/internal/api/controllers"
-	"skybox-backend/internal/api/models"
-	"skybox-backend/internal/api/repositories"
-	"skybox-backend/internal/api/services"
-	"skybox-backend/internal/shared/middlewares"
-
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // NewFileRouters sets up the routes and the corresponding handlers
 func NewFileRouters(db *mongo.Database, group *gin.RouterGroup) {
-	// Create new instance of the repositories
-	fr := repositories.NewFileRepository(db, models.CollectionFiles)
-	usr := repositories.NewUploadSessionRepository(db, models.CollectionUploadSessions)
-	fc := &controllers.FileController{
-		FileService: services.NewFileService(fr, usr),
-	}
+	// Initialize the application container
+	appContainer := GetApplicationContainer(db)
+	fc := appContainer.FileController
 
 	folderRepo := repositories.NewFolderRepository(db, models.CollectionFolders)
 	folderController := &controllers.FolderController{

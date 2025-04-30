@@ -10,10 +10,10 @@ import (
 )
 
 type UploadSessionController struct {
-	UploadSessionService services.UploadSessionService
+	UploadSessionService *services.UploadSessionService
 }
 
-func NewUploadSessionController(uss services.UploadSessionService) *UploadSessionController {
+func NewUploadSessionController(uss *services.UploadSessionService) *UploadSessionController {
 	return &UploadSessionController{
 		UploadSessionService: uss,
 	}

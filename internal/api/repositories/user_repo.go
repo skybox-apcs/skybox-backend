@@ -11,21 +11,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type userRepository struct {
+type UserRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-// NewUserRepository creates a new instance of the userRepository
-func NewUserRepository(db *mongo.Database, collection string) *userRepository {
-	return &userRepository{
+// NewUserRepository creates a new instance of the UserRepository
+func NewUserRepository(db *mongo.Database, collection string) *UserRepository {
+	return &UserRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
 // CreateUser creates a new user
-func (ur *userRepository) CreateUser(ctx context.Context, user *models.User) error {
+func (ur *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
 	collection := ur.database.Collection(ur.collection)
 	folderCollection := ur.database.Collection(models.CollectionFolders)
 
@@ -62,7 +62,7 @@ func (ur *userRepository) CreateUser(ctx context.Context, user *models.User) err
 }
 
 // GetUserByEmail retrieves a user by email
-func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	user := &models.User{}
@@ -94,7 +94,7 @@ func (ur *userRepository) GetUsersByEmails(ctx context.Context, emails []string)
 }
 
 // GetUserByID retrieves a user by ID
-func (ur *userRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+func (ur *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	user := &models.User{}
@@ -109,7 +109,7 @@ func (ur *userRepository) GetUserByID(ctx context.Context, id string) (*models.U
 }
 
 // GetUsersByIDs retrieves users by their IDs
-func (ur *userRepository) GetUsersByIDs(ctx context.Context, ids []string) ([]*models.User, error) {
+func (ur *UserRepository) GetUsersByIDs(ctx context.Context, ids []string) ([]*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	// Convert string IDs to ObjectIDs
@@ -139,7 +139,7 @@ func (ur *userRepository) GetUsersByIDs(ctx context.Context, ids []string) ([]*m
 }
 
 // GetUserByUsername retrieves a user by username
-func (ur *userRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+func (ur *UserRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	user := &models.User{}
@@ -152,7 +152,7 @@ func (ur *userRepository) GetUserByUsername(ctx context.Context, username string
 }
 
 // UpdateUserLastLogin updates the last login time of a user
-func (ur *userRepository) UpdateUserLastLogin(ctx context.Context, id string) error {
+func (ur *UserRepository) UpdateUserLastLogin(ctx context.Context, id string) error {
 	collection := ur.database.Collection(ur.collection)
 
 	// Convert the string ID to ObjectID

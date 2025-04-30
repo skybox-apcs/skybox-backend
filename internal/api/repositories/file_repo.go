@@ -12,20 +12,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type fileRepository struct {
+type FileRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-// NewFileRepository creates a new instance of the fileRepository
-func NewFileRepository(db *mongo.Database, collection string) *fileRepository {
-	return &fileRepository{
+// NewFileRepository creates a new instance of the FileRepository
+func NewFileRepository(db *mongo.Database, collection string) *FileRepository {
+	return &FileRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
-func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
+func (fr *FileRepository) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
 	folderCollection := fr.database.Collection(models.CollectionFolders)
 	userIDValue := ctx.Value("x-user-id-hex")
@@ -58,7 +58,7 @@ func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.F
 	return file, nil
 }
 
-func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
+func (fr *FileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
 	userIDValue := ctx.Value("x-user-id-hex")
 	userID, ok := userIDValue.(primitive.ObjectID)
@@ -83,7 +83,7 @@ func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.F
 	return nil, err
 }
 
-func (fr *fileRepository) DeleteFile(ctx context.Context, id string) error {
+func (fr *FileRepository) DeleteFile(ctx context.Context, id string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -105,7 +105,7 @@ func (fr *fileRepository) DeleteFile(ctx context.Context, id string) error {
 	return nil
 }
 
-func (fr *fileRepository) RenameFile(ctx context.Context, id string, newName string) error {
+func (fr *FileRepository) RenameFile(ctx context.Context, id string, newName string) error {
 	collection := fr.database.Collection(fr.collection)
 
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -132,7 +132,7 @@ func (fr *fileRepository) RenameFile(ctx context.Context, id string, newName str
 	return nil
 }
 
-func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFolderID string) error {
+func (fr *FileRepository) MoveFile(ctx context.Context, id string, newParentFolderID string) error {
 	collection := fr.database.Collection(fr.collection)
 	folderCollection := fr.database.Collection(models.CollectionFolders)
 

@@ -9,21 +9,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type chunkRepository struct {
+type ChunkRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-// NewChunkRepository creates a new instance of the chunkRepository
-func NewChunkRepository(db *mongo.Database, collection string) *chunkRepository {
-	return &chunkRepository{
+// NewChunkRepository creates a new instance of the ChunkRepository
+func NewChunkRepository(db *mongo.Database, collection string) *ChunkRepository {
+	return &ChunkRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
 // UploadChunkMetadata uploads chunk metadata to the database
-func (cr *chunkRepository) UploadChunkMetadata(ctx context.Context, fileId string, chunk *models.Chunk) (*models.Chunk, error) {
+func (cr *ChunkRepository) UploadChunkMetadata(ctx context.Context, fileId string, chunk *models.Chunk) (*models.Chunk, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -40,7 +40,7 @@ func (cr *chunkRepository) UploadChunkMetadata(ctx context.Context, fileId strin
 }
 
 // UpdateChunkStatus updates the status of a chunk in the database
-func (cr *chunkRepository) UpdateChunkStatus(ctx context.Context, fileId string, chunkIndex int, status string) error {
+func (cr *ChunkRepository) UpdateChunkStatus(ctx context.Context, fileId string, chunkIndex int, status string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -61,7 +61,7 @@ func (cr *chunkRepository) UpdateChunkStatus(ctx context.Context, fileId string,
 }
 
 // GetChunksByFileID retrieves all chunks for a specific file from the database
-func (cr *chunkRepository) GetChunksByFileID(ctx context.Context, fileId string) ([]models.Chunk, error) {
+func (cr *ChunkRepository) GetChunksByFileID(ctx context.Context, fileId string) ([]models.Chunk, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -81,7 +81,7 @@ func (cr *chunkRepository) GetChunksByFileID(ctx context.Context, fileId string)
 }
 
 // GetChunkByID retrieves a chunk by its ID from the database
-func (cr *chunkRepository) GetChunkByID(ctx context.Context, id string) (*models.Chunk, error) {
+func (cr *ChunkRepository) GetChunkByID(ctx context.Context, id string) (*models.Chunk, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

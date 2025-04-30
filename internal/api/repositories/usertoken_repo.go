@@ -11,22 +11,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// userTokenRepository is the interface for user token repository
-type userTokenRepository struct {
+// UserTokenRepository is the interface for user token repository
+type UserTokenRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-// NewUserTokenRepository creates a new instance of the userTokenRepository
-func NewUserTokenRepository(db *mongo.Database, collection string) *userTokenRepository {
-	return &userTokenRepository{
+// NewUserTokenRepository creates a new instance of the UserTokenRepository
+func NewUserTokenRepository(db *mongo.Database, collection string) *UserTokenRepository {
+	return &UserTokenRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
 // CreateUserToken creates a new user token
-func (utr *userTokenRepository) CreateUserToken(ctx context.Context, userToken *models.UserToken) error {
+func (utr *UserTokenRepository) CreateUserToken(ctx context.Context, userToken *models.UserToken) error {
 	collection := utr.database.Collection(utr.collection)
 
 	_, err := collection.InsertOne(ctx, userToken)
@@ -38,7 +38,7 @@ func (utr *userTokenRepository) CreateUserToken(ctx context.Context, userToken *
 }
 
 // FindUserToken retrieves a user token by token
-func (utr *userTokenRepository) FindUserToken(ctx context.Context, token string) (*models.UserToken, error) {
+func (utr *UserTokenRepository) FindUserToken(ctx context.Context, token string) (*models.UserToken, error) {
 	collection := utr.database.Collection(utr.collection)
 
 	userToken := &models.UserToken{}
@@ -51,7 +51,7 @@ func (utr *userTokenRepository) FindUserToken(ctx context.Context, token string)
 }
 
 // GetUserTokenByID retrieves a user token by ID
-func (utr *userTokenRepository) GetUserTokenByID(ctx context.Context, id string) (*models.UserToken, error) {
+func (utr *UserTokenRepository) GetUserTokenByID(ctx context.Context, id string) (*models.UserToken, error) {
 	collection := utr.database.Collection(utr.collection)
 
 	userToken := &models.UserToken{}
@@ -69,7 +69,7 @@ func (utr *userTokenRepository) GetUserTokenByID(ctx context.Context, id string)
 }
 
 // GetUserTokenByUserID retrieves a list user token by user ID
-func (utr *userTokenRepository) GetUserTokenByUserID(ctx context.Context, userID string) (*[]models.UserToken, error) {
+func (utr *UserTokenRepository) GetUserTokenByUserID(ctx context.Context, userID string) (*[]models.UserToken, error) {
 	collection := utr.database.Collection(utr.collection)
 
 	userIDHex, err := primitive.ObjectIDFromHex(userID)
@@ -104,7 +104,7 @@ func (utr *userTokenRepository) GetUserTokenByUserID(ctx context.Context, userID
 }
 
 // DeleteUserToken deletes a user token by token
-func (utr *userTokenRepository) DeleteUserToken(ctx context.Context, token string) error {
+func (utr *UserTokenRepository) DeleteUserToken(ctx context.Context, token string) error {
 	collection := utr.database.Collection(utr.collection)
 
 	// Delete the user token
@@ -121,7 +121,7 @@ func (utr *userTokenRepository) DeleteUserToken(ctx context.Context, token strin
 }
 
 // DeleteUserTokensByUserID deletes all user tokens by user ID
-func (utr *userTokenRepository) DeleteUserTokensByUserID(ctx context.Context, userID string) error {
+func (utr *UserTokenRepository) DeleteUserTokensByUserID(ctx context.Context, userID string) error {
 	collection := utr.database.Collection(utr.collection)
 
 	userIDHex, err := primitive.ObjectIDFromHex(userID)

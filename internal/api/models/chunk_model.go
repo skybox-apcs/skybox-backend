@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,8 +21,8 @@ type Chunk struct {
 }
 
 type ChunkRepository interface {
-	UploadChunkMetadata(fileId string, chunk *Chunk) (*Chunk, error)      // Upload chunk metadata
-	UpdateChunkStatus(fileId string, chunkIndex int, status string) error // Update chunk status
-	GetChunksByFileID(fileId string) ([]Chunk, error)                     // Get all chunks for a file
-	GetChunkByID(id string) (*Chunk, error)                               // Get chunk by ID
+	UploadChunkMetadata(ctx context.Context, fileId string, chunk *Chunk) (*Chunk, error)      // Upload chunk metadata
+	UpdateChunkStatus(ctx context.Context, fileId string, chunkIndex int, status string) error // Update chunk status
+	GetChunksByFileID(ctx context.Context, fileId string) ([]Chunk, error)                     // Get all chunks for a file
+	GetChunkByID(ctx context.Context, id string) (*Chunk, error)                               // Get chunk by ID
 }
