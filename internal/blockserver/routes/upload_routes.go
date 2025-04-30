@@ -29,7 +29,7 @@ func NewUploadRouters(group *gin.RouterGroup) {
 		// 2. Upload a chunk to a resumable session
 		uploadGroup.POST("/session/:sessionToken/chunk", uploadController.UploadChunkHandler)
 		// 3. Get the status of a resumable session
-		uploadGroup.GET("/session/:sessionToken/status", nil)
+		uploadGroup.GET("/session/:sessionToken/status", uploadController.GetSessionStatusHandler)
 
 		// (Optional) Cancel session, merge chunks, etc.
 		uploadGroup.POST("/session/:sessionToken/complete", nil)

@@ -301,8 +301,13 @@ func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
 	defer c.Request.Body.Close()
 
 	fmt.Printf("Chunk index: %d, Start: %d, End: %d, Size: %d, Actual Size: %d\n", chunkIndex, start, end, int(end-start+1), len(chunkData))
+	// Check if the chunk size matches the expected size and chunk size is actually less than the default chunk size
 	if len(chunkData) != int(end-start+1) {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Chunk size mismatch")
+		return
+	}
+	if int64(len(chunkData)) > DefaultChunkSize {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Chunk size exceeds the maximum limit")
 		return
 	}
 
@@ -322,4 +327,34 @@ func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
 
 	// Return success response
 	shared.SuccessJSON(c, http.StatusOK, "Chunk uploaded successfully", nil)
+}
+
+// GetSessionStatusHandler godoc
+func (uc *UploadController) GetSessionStatusHandler(c *gin.Context) {
+	sessionToken := c.Param("sessionToken")
+	if sessionToken == "" {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Missing session ID")
+		return
+	}
+
+	// Fetch the session metadata from the API Server
+	session, err := uc.UploadService.FetchSessionObject(c, sessionToken)
+	if err != nil {
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to fetch session object "+err.Error())
+		return
+	}
+
+	// Get the user ID from the context
+	userId, ok := c.Get("x-user-id")
+	if !ok {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Missing user ID in context")
+		return
+	}
+	if userId != session.UserID.Hex() {
+		shared.ErrorJSON(c, http.StatusForbidden, "User ID does not match the session owner")
+		return
+	}
+
+	// Return the session
+	shared.SuccessJSON(c, http.StatusOK, "Session retrieved successfully", session)
 }

@@ -107,6 +107,9 @@ func (us *UploadService) FetchFileObject(ctx *gin.Context, fileId string) (*mode
 }
 
 // ValidateFile is a helper function to validate the file object
+// This helper function would be used in the controller to fetch the file object from the API server
+// It checks if the file exists and if the user ID matches the file owner
+// It also checks if the file is already uploaded or not
 func (us *UploadService) ValidateFile(ctx *gin.Context, fileId string) error {
 	// Fetch the file metadata from the API Server
 	file, err := us.FetchFileObject(ctx, fileId)
@@ -156,6 +159,11 @@ func (us *UploadService) FetchSessionObject(ctx *gin.Context, sessionToken strin
 	return response.Data, nil
 }
 
+// ValidateSession is a helper function to validate the session object
+// This helper function would be used in the controller to fetch the file object from the API server
+// It checks if the session exists and if the user ID matches the session owner
+// It also checks if the chunk index already exists in the session.ChunkList to prevent duplicate uploads
+// It returns the file ID if the session is valid, or an error if it is not
 func (us *UploadService) ValidateSession(ctx *gin.Context, sessionId string, chunkIndex int) (string, error) {
 	// Fetch the session metadata from the API Server
 	session, err := us.FetchSessionObject(ctx, sessionId)
@@ -181,7 +189,7 @@ func (us *UploadService) ValidateSession(ctx *gin.Context, sessionId string, chu
 // It would upload the chunk to S3 if in production or save it locally if in development
 // Key format: `<userId>/<fileId>_<chunkIndex>`
 // The fileId is the ID of the file being uploaded, and chunkIndex is the index of the chunk
-func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName string, ext string, chunkIndex int, buf []byte) error {
+func (us *UploadService) SaveChunk(ctx *gin.Context, fileId string, fileName string, ext string, chunkIndex int, buf []byte) error {
 	// Get the user id from the ctx which passed from middleware
 	// From gin: ctx.GetHeader("x-user-id")
 	userId := ctx.Value("x-user-id").(string)
@@ -225,8 +233,45 @@ func (us *UploadService) SaveChunk(ctx context.Context, fileId string, fileName 
 		fmt.Printf("Saved chunk %d of file %s to %s\n", chunkIndex, fileId, localPath)
 	}
 
-	// TODO: Once the chunk is saved, call API Server to update the file status
-	fmt.Printf("Calling API Server to update file status...\n")
+	// Call to API Server to update the session record
+	if err := us.UpdateSessionRecord(ctx, fileId, chunkIndex); err != nil {
+		return fmt.Errorf("failed to update session record: %w", err)
+	}
+
+	return nil
+}
+
+func (us *UploadService) UpdateSessionRecordByFileId(ctx *gin.Context, fileId string, chunkIndex int) error {
+	// Define the API Server URL
+	apiServerURL := fmt.Sprintf("%s/api/v1/upload/file/%s", us.baseURL, fileId)
+
+	// Create an HTTP request
+	var requestBody = struct {
+		ChunkNumber int `json:"chunk_number"`
+	}{
+		ChunkNumber: chunkIndex,
+	}
+
+	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	type responseStruct struct {
+		Status  string      `json:"status"`
+		Message string      `json:"message"`
+		Data    interface{} `json:"data"`
+	}
+
+	response := &responseStruct{}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	if response.Status != "success" {
+		return fmt.Errorf("failed to update session record: %s", response.Message)
+	}
 
 	return nil
 }
