@@ -260,6 +260,7 @@ func (fc *FileController) PartialDownloadFileHandler(c *gin.Context) {
 //
 // @Summary Download a file
 // @Description Download a file by its ID. The file is streamed in chunks to the client. The client can request a specific range of bytes using the Range header. If no Range header is provided, the entire file is downloaded.
+// @Security		Bearer
 // @Tags Files
 // @Accept json
 // @Produce json
@@ -268,7 +269,7 @@ func (fc *FileController) PartialDownloadFileHandler(c *gin.Context) {
 // @Failure 400 {string} string "Invalid request body"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /files/{fileId}/download [get]
+// @Router /api/v1/files/{fileId}/download [get]
 func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
