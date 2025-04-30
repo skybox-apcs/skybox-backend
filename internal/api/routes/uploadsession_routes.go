@@ -23,5 +23,7 @@ func NewUploadRouters(db *mongo.Database, group *gin.RouterGroup) {
 	{
 		folderGroup.GET("/:sessionToken", usc.GetUploadSessionHandler)
 		folderGroup.PUT("/:sessionToken", usc.AddChunkHandler)
+		folderGroup.GET("/file/:fileID", usc.GetSessionRecordByFileIDHandler)
+		folderGroup.PUT("/file/:fileID", usc.AddChunkViaFileIDHandler)
 	}
 }
