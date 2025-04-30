@@ -660,6 +660,44 @@ paths:
       summary: Get file metadata
       tags:
       - Files
+  /api/v1/files/{fileId}/download:
+    get:
+      consumes:
+      - application/json
+      description: Download a file by its ID. The file is streamed in chunks to the
+        client. The client can request a specific range of bytes using the Range header.
+        If no Range header is provided, the entire file is downloaded.
+      parameters:
+      - description: File ID
+        example: 1234567890abcdef12345678
+        in: path
+        name: fileId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File downloaded successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: File not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Download a file
+      tags:
+      - Files
   /api/v1/files/{fileId}/move:
     put:
       consumes:
@@ -1510,42 +1548,6 @@ paths:
       summary: Returns the user information
       tags:
       - User
-  /files/{fileId}/download:
-    get:
-      consumes:
-      - application/json
-      description: Download a file by its ID. The file is streamed in chunks to the
-        client. The client can request a specific range of bytes using the Range header.
-        If no Range header is provided, the entire file is downloaded.
-      parameters:
-      - description: File ID
-        example: 1234567890abcdef12345678
-        in: path
-        name: fileId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: File downloaded successfully
-          schema:
-            type: string
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: File not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Download a file
-      tags:
-      - Files
   /hello:
     get:
       consumes:
