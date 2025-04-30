@@ -846,3 +846,168 @@ func TestCreateFolder_InvalidPayload(t *testing.T) {
 	assert.Equal(t, "error", response.Status)
 	assert.Equal(t, "Invalid request.", response.Message)
 }
+
+func TestCreateFolder_ParentFolderNotFound(t *testing.T) {
+	// Mock folder ID
+	mockOwnerID := primitive.NewObjectID()
+
+	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("x-user-id-hex", mockOwnerID)
+		c.Next()
+	})
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, mockFolderRepo, _, _ := setupMockServices()
+
+	folderGroup := group.Group("/folders")
+	{
+		folderGroup.POST("/:folderId/create", folderController.CreateFolderHandler)
+	}
+
+	// Mock folder ID and request body
+	mockFolderID := primitive.NewObjectID().Hex()
+	mockFolderName := "New Folder"
+
+	// Mock CreateFolder to return an error for parent folder not found
+	mockFolderRepo.On("CreateFolder", mock.Anything, mock.AnythingOfType("*models.Folder")).Return(nil, fmt.Errorf("parent folder not found"))
+
+	// Create request
+	reqBody := map[string]string{
+		"name": mockFolderName,
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/folders/"+mockFolderID+"/create", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+	assert.Equal(t, "parent folder not found", response.Message)
+
+	// Assert mock expectations
+	mockFolderRepo.AssertExpectations(t)
+}
+
+func TestUploadFileMetadata_Success(t *testing.T) {
+	// Mock file upload request
+	mockFileID := primitive.NewObjectID()
+	mockFileName := "test_file.txt"
+	mockFileSize := int64(123456)
+	mockOwnerID := primitive.NewObjectID()
+	mockParentFolderID := primitive.NewObjectID()
+
+	// Mock file upload response
+	mockFile := &models.File{
+		ID:             mockFileID,
+		FileName:       mockFileName,
+		Size:           mockFileSize,
+		OwnerID:        mockOwnerID,
+		ParentFolderID: mockParentFolderID,
+		IsDeleted:      false,
+		Status:         "uploaded",
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	// Mock file upload request
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	r.Use(func(c *gin.Context) {
+		c.Set("x-user-id-hex", mockOwnerID)
+		c.Set("x-username", "test_user")
+		c.Set("x-email", "test@email.com")
+		c.Next()
+	})
+	group := r.Group("/")
+	folderController, _, mockFileRepo, mockUploadSessionRepo := setupMockServices()
+
+	folderGroup := group.Group("/folder")
+	{
+		folderGroup.POST("/:folderId/upload", folderController.UploadFileMetadataHandler)
+	}
+
+	// Mock UploadFileMetadata to succeed
+	mockFileRepo.On("UploadFileMetadata", mock.Anything, mock.AnythingOfType("*models.File")).Return(mockFile, nil)
+	mockUploadSessionRepo.On("CreateSessionRecord", mock.Anything, mock.AnythingOfType("*models.UploadSession")).Return(nil, nil)
+
+	// Create request
+	reqBody := &models.UploadFileMetadataRequest{
+		FileName: mockFileName,
+		FileSize: mockFileSize,
+		MimeType: "text/plain",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/folder/"+mockParentFolderID.Hex()+"/upload", bytes.NewBuffer(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusCreated, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Data    models.UploadFileMetadataResponse `json:"data"`
+		Message string                            `json:"message"`
+		Status  string                            `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+	assert.Equal(t, "File metadata uploaded successfully.", response.Message)
+	assert.Equal(t, mockFile.ID.Hex(), response.Data.File.ID)
+	assert.Equal(t, mockFile.OwnerID.Hex(), response.Data.File.OwnerID)
+	assert.Equal(t, mockParentFolderID.Hex(), response.Data.File.ParentFolderID)
+	assert.Equal(t, mockFile.FileName, response.Data.File.Name)
+
+	// Assert mock expectations
+	mockFileRepo.AssertExpectations(t)
+}
+
+func TestUploadFileMetadata_InvalidPayload(t *testing.T) {
+	// Mock file upload request
+	r := gin.Default()
+	r.Use(middlewares.GlobalErrorMiddleware()) // Use the global error middleware
+	group := r.Group("/")
+	folderController, _, _, _ := setupMockServices()
+
+	folderGroup := group.Group("/folder")
+	{
+		folderGroup.POST("/:folderId/upload", folderController.UploadFileMetadataHandler)
+	}
+
+	// Mock folder ID
+	mockFolderID := primitive.NewObjectID().Hex()
+
+	// Create request with invalid payload
+	req, _ := http.NewRequest("POST", "/folder/"+mockFolderID+"/upload", bytes.NewBuffer([]byte("{invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Assert response
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// Parse response body
+	var response struct {
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	}
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "error", response.Status)
+	assert.Equal(t, "Invalid request.", response.Message)
+}
