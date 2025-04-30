@@ -122,7 +122,7 @@ func (usc *UploadSessionController) AddChunkHandler(c *gin.Context) {
 		return
 	}
 
-	err := usc.UploadSessionService.AddChunkSessionRecord(c, sessionToken, requestBody.ChunkNumber)
+	err := usc.UploadSessionService.AddChunkSessionRecord(c, sessionToken, requestBody.ChunkNumber, requestBody.ChunkSize)
 	if err != nil {
 		c.Error(err)
 		return
@@ -161,7 +161,7 @@ func (usc *UploadSessionController) AddChunkViaFileIDHandler(c *gin.Context) {
 		return
 	}
 
-	err := usc.UploadSessionService.AddChunkSessionRecordByFileID(c, fileID, requestBody.ChunkNumber)
+	err := usc.UploadSessionService.AddChunkSessionRecordByFileID(c, fileID, requestBody.ChunkNumber, requestBody.ChunkSize)
 	if err != nil {
 		c.Error(err)
 		return

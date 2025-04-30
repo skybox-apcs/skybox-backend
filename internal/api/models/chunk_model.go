@@ -14,7 +14,8 @@ type Chunk struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	FileID     primitive.ObjectID `bson:"file_id" json:"file_id"`
 	ChunkIndex int                `bson:"chunk_index" json:"chunk_index"`
-	Status     string             `bson:"status" json:"status"` // "pending", "uploaded", "failed"
+	ChunkSize  int64              `bson:"chunk_size" json:"chunk_size"` // Size of the chunk in bytes
+	ChunkHash  string             `bson:"chunk_hash" json:"chunk_hash"` // Hash of the chunk data, could use MD5, SHA-1, etc.
 	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`
 }
 
