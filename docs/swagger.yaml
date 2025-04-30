@@ -451,63 +451,7 @@ info:
   title: Skybox API and Block Server
   version: "1.0"
 paths:
-  /api/v1/upload/{sessionToken}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve an upload session's metadata using its session token.
-      parameters:
-      - description: Session Token
-        in: path
-        name: sessionToken
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Session retrieved successfully
-          schema:
-            $ref: '#/definitions/models.UploadSession'
-        "400":
-          description: 'Bad Request: Missing or invalid session token'
-          schema:
-            type: string
-        "404":
-          description: 'Not Found: Session not found'
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Get an upload session by session token
-      tags:
-      - UploadSession
-  /api/v1/user/info:
-    get:
-      consumes:
-      - application/json
-      description: Returns the user information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.User'
-        "404":
-          description: User not found
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Returns the user information
-      tags:
-      - User
-  /auth/login:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
@@ -716,43 +660,7 @@ paths:
       summary: Get file metadata
       tags:
       - Files
-  /files/{fileId}/download:
-    get:
-      consumes:
-      - application/json
-      description: Download a file by its ID. The file is streamed in chunks to the
-        client. The client can request a specific range of bytes using the Range header.
-        If no Range header is provided, the entire file is downloaded.
-      parameters:
-      - description: File ID
-        example: 1234567890abcdef12345678
-        in: path
-        name: fileId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: File downloaded successfully
-          schema:
-            type: string
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: File not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Download a file
-      tags:
-      - Files
-  /files/{fileId}/move:
+  /api/v1/files/{fileId}/move:
     put:
       consumes:
       - application/json
@@ -1545,6 +1453,114 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
+  /api/v1/upload/{sessionToken}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve an upload session's metadata using its session token.
+      parameters:
+      - description: Session Token
+        in: path
+        name: sessionToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session retrieved successfully
+          schema:
+            $ref: '#/definitions/models.UploadSession'
+        "400":
+          description: 'Bad Request: Missing or invalid session token'
+          schema:
+            type: string
+        "404":
+          description: 'Not Found: Session not found'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get an upload session by session token
+      tags:
+      - UploadSession
+  /api/v1/user/info:
+    get:
+      consumes:
+      - application/json
+      description: Returns the user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: User not found
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      - ApiKeyAuth: []
+      summary: Returns the user information
+      tags:
+      - User
+  /files/{fileId}/download:
+    get:
+      consumes:
+      - application/json
+      description: Download a file by its ID. The file is streamed in chunks to the
+        client. The client can request a specific range of bytes using the Range header.
+        If no Range header is provided, the entire file is downloaded.
+      parameters:
+      - description: File ID
+        example: 1234567890abcdef12345678
+        in: path
+        name: fileId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File downloaded successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: File not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Download a file
+      tags:
+      - Files
+  /hello:
+    get:
+      consumes:
+      - application/json
+      description: Returns a hello world message
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hello World
+          schema:
+            type: string
+      summary: Returns a hello world message
+      tags:
+      - Misc
   /upload/{sessionToken}:
     put:
       consumes:
@@ -1810,4 +1826,10 @@ paths:
       summary: Upload a whole file (without chunking)
       tags:
       - Upload
+securityDefinitions:
+  Bearer:
+    description: Use "Bearer {your_token}" to authenticate requests.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
