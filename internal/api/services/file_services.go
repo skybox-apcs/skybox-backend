@@ -126,5 +126,7 @@ func (fr *FileService) GetFileData(ctx context.Context, fileId string, chunkNumb
 		}
 	}
 
+	// TODO: Hash checking
+
 	return data, nil
 }
