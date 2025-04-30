@@ -29,10 +29,12 @@ func NewFileRouters(db *mongo.Database, group *gin.RouterGroup) {
 	// Create a new group for the file routes
 	fileGroup := group.Group("/files")
 	{
-		fileGroup.GET("/:fileId", middlewares.FilePermissionMiddleware(folderController, "view"), fc.GetFileMetadataHandler)
-		fileGroup.DELETE("/:fileId", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.DeleteFileHandler)
-		fileGroup.PUT("/:fileId/rename", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.RenameFileHandler)
-		fileGroup.PATCH("/:fileId/rename", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.RenameFileHandler)
-		fileGroup.PUT("/:fileId/move", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.MoveFileHandler)
+		fileGroup.GET("/:fileId", fc.GetFileMetadataHandler)
+		fileGroup.DELETE("/:fileId", fc.DeleteFileHandler)
+		fileGroup.PUT("/:fileId/rename", fc.RenameFileHandler)
+		fileGroup.PATCH("/:fileId/rename", fc.RenameFileHandler)
+		fileGroup.PUT("/:fileId/move", fc.MoveFileHandler)
+
+		fileGroup.GET("/:fileId/download", nil)
 	}
 }
