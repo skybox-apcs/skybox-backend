@@ -25,7 +25,6 @@ type File struct {
 	DeletedAt *time.Time `bson:"deleted_at,omitempty" json:"deleted_at,omitempty"` // Nullable field for soft delete
 	Status    string     `bson:"status" json:"status"`                             // Status of the file (e.g., "uploaded", "processing", "failed")
 
-	// ChunkList   []Chunk `bson:"chunk_list" json:"chunk_list"`
 	TotalChunks int `bson:"total_chunks" json:"total_chunks"`
 
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
