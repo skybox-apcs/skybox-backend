@@ -39,6 +39,14 @@ func (us *UploadSessionService) GetSessionRecordByFileID(ctx context.Context, fi
 	return us.uploadSessionRepository.GetSessionRecordByFileID(ctx, fileID)
 }
 
+// GetSessionRecordByUserID retrieves an upload session by its user ID
+func (us *UploadSessionService) GetSessionRecordByUserID(ctx context.Context, userID string) (*[]models.UploadSession, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.uploadSessionRepository.GetSessionRecordByUserID(ctx, userID)
+}
+
 // AddChunkSessionRecord adds a chunk to an existing upload session
 func (us *UploadSessionService) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error {
 	ctx, cancel := context.WithCancel(ctx)

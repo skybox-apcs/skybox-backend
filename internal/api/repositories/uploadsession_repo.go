@@ -68,6 +68,32 @@ func (ur *UploadSessionRepository) GetSessionRecordByFileID(ctx context.Context,
 	return &session, nil
 }
 
+// GetSessionRecordByUserID retrieves upload session records by user ID
+func (ur *UploadSessionRepository) GetSessionRecordByUserID(ctx context.Context, userID string) (*[]models.UploadSession, error) {
+	collection := ur.database.Collection(ur.collection)
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var sessions []models.UploadSession
+	cursor, err := collection.Find(ctx, bson.M{"user_id": userIDObj})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return &sessions, nil // No sessions found, return empty slice
+		}
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &sessions); err != nil {
+		return nil, err
+	}
+
+	return &sessions, nil
+}
+
 func (ur *UploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error {
 	session, err := ur.database.Client().StartSession()
 	if err != nil {
