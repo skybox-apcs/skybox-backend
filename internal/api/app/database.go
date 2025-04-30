@@ -90,6 +90,21 @@ func CreateIndexes(db *mongo.Database) error {
 		},
 	}
 
+	// Define the indexes for the "upload_sessions" collection
+	indexes["upload_sessions"] = []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "user_id", Value: 1}, // Index on user_id
+				{Key: "file_id", Value: 1}, // Index on file_id
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "session_token", Value: 1}, // Index on session_token
+			},
+		},
+	}
+
 	// Create the indexes for each collection using goroutines
 	for collectionName, indexModels := range indexes {
 		collection := db.Collection(collectionName)
