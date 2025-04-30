@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/models"
@@ -38,16 +37,14 @@ func (fr *FileService) UploadFileMetadata(ctx context.Context, file *models.File
 	}
 
 	// Create a session for chunked uploads
-	totalChunks := int(math.Ceil(float64(file.Size) / float64(configs.Config.DefaultChunkSize)))
 	sessionToken := uuid.New().String()
 	uploadSession := &models.UploadSession{
 		FileID:       savedFile.ID,
 		UserID:       savedFile.OwnerID,
 		SessionToken: sessionToken,
 		TotalSize:    file.Size,
-		ChunkSize:    configs.Config.DefaultChunkSize,
+		ActualSize:   0,
 		ChunkList:    []int{}, // This will be updated later when chunks are uploaded
-		TotalChunks:  totalChunks,
 		Status:       "pending",
 	}
 

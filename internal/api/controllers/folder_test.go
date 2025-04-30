@@ -158,13 +158,13 @@ func (m *MockUploadSessionRepository) GetSessionRecordByFileID(ctx context.Conte
 	return nil, args.Error(1)
 }
 
-func (m *MockUploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int) error {
-	args := m.Called(ctx, sessionToken, chunkNumber)
+func (m *MockUploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int) error {
+	args := m.Called(ctx, sessionToken, chunkNumber, chunkSize)
 	return args.Error(0)
 }
 
-func (m *MockUploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileId string, chunkNumber int) error {
-	args := m.Called(ctx, fileId, chunkNumber)
+func (m *MockUploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileId string, chunkNumber int, chunkSize int) error {
+	args := m.Called(ctx, fileId, chunkNumber, chunkSize)
 	return args.Error(0)
 }
 

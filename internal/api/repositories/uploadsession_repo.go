@@ -54,7 +54,12 @@ func (ur *uploadSessionRepository) GetSessionRecordByFileID(ctx context.Context,
 	collection := ur.database.Collection(ur.collection)
 
 	var session models.UploadSession
-	err := collection.FindOne(ctx, bson.M{"file_id": fileID}).Decode(&session)
+	fileIDObj, err := primitive.ObjectIDFromHex(fileID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = collection.FindOne(ctx, bson.M{"file_id": fileIDObj}).Decode(&session)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +68,7 @@ func (ur *uploadSessionRepository) GetSessionRecordByFileID(ctx context.Context,
 }
 
 // AddChunkSessionRecord adds a chunk to an existing upload session record
-func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int) error {
+func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int) error {
 	collection := ur.database.Collection(ur.collection)
 
 	// Check if the chunk number already exists in the session record
@@ -78,13 +83,14 @@ func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, se
 	// Update the session record to add the chunk number
 	_, err = collection.UpdateOne(ctx, bson.M{"session_token": sessionToken}, bson.M{
 		"$addToSet": bson.M{"chunk_list": chunkNumber},
+		"$inc":      bson.M{"actual_size": int64(chunkSize)},
 	})
 	if err != nil {
 		return err
 	}
 
 	// Update the session record if the chunk number is the last chunk
-	if len(session.ChunkList)+1 == session.TotalChunks {
+	if session.TotalSize == session.ActualSize+int64(chunkSize) {
 		// Update the session record to mark it as completed
 		_, err = collection.UpdateOne(ctx, bson.M{"session_token": sessionToken}, bson.M{
 			"$set": bson.M{"status": "completed"},
@@ -107,7 +113,7 @@ func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, se
 }
 
 // AddChunkSessionRecordByFileID adds a chunk to an existing upload session record using file ID
-func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int) error {
+func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int) error {
 	collection := ur.database.Collection(ur.collection)
 
 	// Check if the chunk number already exists in the session record
@@ -120,17 +126,18 @@ func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Con
 	}
 
 	// Update the session record to add the chunk number
-	_, err = collection.UpdateOne(ctx, bson.M{"file_id": fileID}, bson.M{
+	_, err = collection.UpdateOne(ctx, bson.M{"file_id": session.FileID}, bson.M{
 		"$addToSet": bson.M{"chunk_list": chunkNumber},
+		"$inc":      bson.M{"actual_size": int64(chunkSize)},
 	})
 	if err != nil {
 		return err
 	}
 
 	// Update the session record if the chunk number is the last chunk
-	if len(session.ChunkList)+1 == session.TotalChunks {
+	if session.TotalSize == session.ActualSize+int64(chunkSize) {
 		// Update the session record to mark it as completed
-		_, err = collection.UpdateOne(ctx, bson.M{"file_id": fileID}, bson.M{
+		_, err = collection.UpdateOne(ctx, bson.M{"file_id": session.FileID}, bson.M{
 			"$set": bson.M{"status": "completed"},
 		})
 		if err != nil {

@@ -40,17 +40,17 @@ func (us *UploadSessionService) GetSessionRecordByFileID(ctx context.Context, fi
 }
 
 // AddChunkSessionRecord adds a chunk to an existing upload session
-func (us *UploadSessionService) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int) error {
+func (us *UploadSessionService) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return us.uploadSessionRepository.AddChunkSessionRecord(ctx, sessionToken, chunkNumber)
+	return us.uploadSessionRepository.AddChunkSessionRecord(ctx, sessionToken, chunkNumber, chunkSize)
 }
 
 // AddChunkSessionRecordByFileID adds a chunk to an existing upload session by file ID
-func (us *UploadSessionService) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int) error {
+func (us *UploadSessionService) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return us.uploadSessionRepository.AddChunkSessionRecordByFileID(ctx, fileID, chunkNumber)
+	return us.uploadSessionRepository.AddChunkSessionRecordByFileID(ctx, fileID, chunkNumber, chunkSize)
 }
