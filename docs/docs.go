@@ -424,7 +424,58 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/files/{fileId}/move": {
+        "/files/{fileId}/download": {
+            "get": {
+                "description": "Download a file by its ID. The file is streamed in chunks to the client. The client can request a specific range of bytes using the Range header. If no Range header is provided, the entire file is downloaded.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "1234567890abcdef12345678",
+                        "description": "File ID",
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File downloaded successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "File not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{fileId}/move": {
             "put": {
                 "security": [
                     {
@@ -2291,8 +2342,16 @@ const docTemplate = `{
         "models.AddChunkRequest": {
             "type": "object",
             "properties": {
+                "chunk_hash": {
+                    "description": "The hash of the chunk being uploaded",
+                    "type": "string"
+                },
                 "chunk_number": {
                     "description": "The number of the chunk being uploaded",
+                    "type": "integer"
+                },
+                "chunk_size": {
+                    "description": "The size of the chunk being uploaded",
                     "type": "integer"
                 }
             }
@@ -2300,8 +2359,16 @@ const docTemplate = `{
         "models.AddChunkViaFileIDRequest": {
             "type": "object",
             "properties": {
+                "chunk_hash": {
+                    "description": "The hash of the chunk being uploaded",
+                    "type": "string"
+                },
                 "chunk_number": {
                     "description": "The number of the chunk being uploaded",
+                    "type": "integer"
+                },
+                "chunk_size": {
+                    "description": "The size of the chunk being uploaded",
                     "type": "integer"
                 }
             }
@@ -2381,7 +2448,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "total_chunks": {
-                    "description": "ChunkList   []Chunk ` + "`" + `bson:\"chunk_list\" json:\"chunk_list\"` + "`" + `",
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2795,16 +2861,16 @@ const docTemplate = `{
         "models.UploadSession": {
             "type": "object",
             "properties": {
+                "actual_size": {
+                    "description": "Actual size of the uploaded file",
+                    "type": "integer"
+                },
                 "chunk_list": {
                     "description": "List of chunks that have been uploaded",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
-                },
-                "chunk_size": {
-                    "description": "Size of each chunk",
-                    "type": "integer"
                 },
                 "file_id": {
                     "description": "Reference to the file",
@@ -2820,10 +2886,6 @@ const docTemplate = `{
                 "status": {
                     "description": "Status of the upload session (e.g., \"pending\", \"completed\", \"failed\")",
                     "type": "string"
-                },
-                "total_chunks": {
-                    "description": "Total number of chunks",
-                    "type": "integer"
                 },
                 "total_size": {
                     "description": "Total size of the file to be uploaded",
