@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"skybox-backend/configs"
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
 	"skybox-backend/internal/shared"
@@ -194,8 +197,8 @@ func (fc *FileController) MoveFileHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "File moved successfully", nil)
 }
 
-// DownloadFileHandler godoc
-func (fc *FileController) DownloadFileHandler(c *gin.Context) {
+// PartialDownloadFileHandler godoc
+func (fc *FileController) PartialDownloadFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
 	if fileID == "" {
@@ -210,6 +213,13 @@ func (fc *FileController) DownloadFileHandler(c *gin.Context) {
 		return
 	}
 
+	// Check if the file uploaded
+	if file.Status != "uploaded" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "File is not uploaded yet", nil)
+		return
+	}
+
+	// Check if the Range header is present
 	rangeHeader := c.GetHeader("Range")
 	start, end := parseRangeHeader(rangeHeader, file.Size)
 	if start > end || end >= file.Size {
@@ -218,4 +228,76 @@ func (fc *FileController) DownloadFileHandler(c *gin.Context) {
 	}
 
 	// Prepare buffer for the request range
+	buf := new(bytes.Buffer)
+	chunkSize := configs.Config.DefaultChunkSize
+	startChunk := start / chunkSize               // round down to the previous chunk
+	endChunk := (end + chunkSize - 1) / chunkSize // round up to the next chunk
+
+	// Iterate over the chunks and download them
+	for i := startChunk; i <= endChunk; i++ {
+		chunkData, err := fc.FileService.GetFileData(c, fileID, int(i))
+		if err != nil {
+			c.Error(err)
+			return
+		}
+
+		chunkStart := int64(i) * int64(chunkSize)
+		forwardStart := max(0, start-chunkStart)
+		forwardEnd := min(int64(len(chunkData)), end-chunkStart+1)
+
+		buf.Write(chunkData[forwardStart:forwardEnd])
+	}
+
+	// Set the headers for the response
+	c.Header("Content-Type", file.MimeType)
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, file.Size))
+	c.Status(http.StatusPartialContent)
+	c.Writer.Write(buf.Bytes())
+}
+
+// FullDownloadFileHandler godoc
+func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
+	// Get the file ID from the URL parameters
+	fileID := c.Param("fileId")
+	if fileID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "File ID is required", nil)
+		return
+	}
+
+	// Get the file metadata
+	file, err := fc.FileService.GetFileByID(c, fileID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	// Check if the file uploaded
+	if file.Status != "uploaded" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "File is not uploaded yet", nil)
+		return
+	}
+
+	// Set the headers for the response
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
+	c.Header("Content-Type", file.MimeType)
+	c.Header("Content-Length", strconv.FormatInt(file.Size, 10))
+	c.Header("Accept-Ranges", "bytes")
+	c.Status(http.StatusOK)
+
+	// Stream the file data to the response
+	for i := 0; i < file.TotalChunks; i++ {
+		chunkData, err := fc.FileService.GetFileData(c, fileID, i)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+
+		// Stream the chunk data to the response
+		if _, err := c.Writer.Write(chunkData); err != nil {
+			c.Error(err)
+			return
+		}
+		c.Writer.Flush()
+	}
 }
