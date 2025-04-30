@@ -33,7 +33,7 @@ func NewUserController(us *services.UserService) *UserController {
 // @Security ApiKeyAuth
 // @Success 200 {object} models.User
 // @Failure 404 {string} string "User not found"
-// @Router /api/v1/user [get]
+// @Router /api/v1/user/info [get]
 func (uc *UserController) GetUserInformationHandler(c *gin.Context) {
 	// Get the user ID from the request context
 	userID := c.GetString("x-user-id")

@@ -69,17 +69,17 @@ func parseContentRange(header string) (start, end, total int64, err error) {
 
 // UploadWholeFileHandler godoc
 //
-//	@Summary 		Upload a whole file (without chunking)
-//	@Description 	Upload a whole file (without chunking) to the server. This is a simple upload endpoint that does not require chunking. It is useful for smaller files or when chunking is not needed, i.e., lower than 50MB.
-//	@Tags 			Upload
-//	@Accept 		multipart/form-data
-//	@Produce 		json
-//	@Param 			fileId 	path string true "File ID" default("fileId") example("fileId")
-//	@Param 			file 	formData file true "File" default("file") example("file")
-//	@Success 		200 {string} string "File uploaded successfully"
-//	@Failure 		400 {string} string "Bad Request" "Invalid file ID or Failed to get file from form or file size exceeds the maximum limit"
-//	@Failure 		500 {string} string "Internal Server Error" "Failed to save file"
-//	@Router 		/upload/whole/{fileId} [post]
+//	@Summary		Upload a whole file (without chunking)
+//	@Description	Upload a whole file (without chunking) to the server. This is a simple upload endpoint that does not require chunking. It is useful for smaller files or when chunking is not needed, i.e., lower than 50MB.
+//	@Tags			Upload
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			fileId	path		string	true	"File ID"	default("fileId")	example("fileId")
+//	@Param			file	formData	file	true	"File"		default("file")		example("file")
+//	@Success		200		{string}	string	"File uploaded successfully"
+//	@Failure		400		{string}	string	"Bad Request: Invalid file ID or Failed to get file from form or file size exceeds the maximum limit"
+//	@Failure		500		{string}	string	"Internal Server Error: Failed to save file"
+//	@Router			/upload/whole/{fileId} [post]
 //
 // UploadWholeFileHandler handles whole file uploads (not chunked)
 func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
@@ -139,18 +139,18 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 
 // UploadAutoChunkHandler godoc
 //
-//	@Summary 		Upload a file in chunks (auto chunking)
-//	@Description 	Upload a file in chunks (auto chunking) to the server. This endpoint automatically splits the file into chunks and uploads them concurrently. It is useful for larger files or when chunking is needed, i.e., larger than 50MB.
-//	@Tags 			Upload
-//	@Accept 		multipart/form-data
-//	@Produce 		json
-//	@Param 			fileId 	path string true "File ID" default("fileId") example("fileId")
-//	@Param 			chunkSize 	query int false "Chunk Size" default(5242880) example(5242880)
-//	@Param 			file 	formData file true "File" default("file") example("file")
-//	@Success 		200 {string} string "File uploaded successfully"
-//	@Failure 		400 {string} string "Bad Request" "Invalid file ID or file size exceeds the maximum limit"
-//	@Failure 		500 {string} string "Internal Server Error" "Failed to save file"
-//	@Router 		/upload/auto-chunk/{fileId} [post]
+//	@Summary		Upload a file in chunks (auto chunking)
+//	@Description	Upload a file in chunks (auto chunking) to the server. This endpoint automatically splits the file into chunks and uploads them concurrently. It is useful for larger files or when chunking is needed, i.e., larger than 50MB.
+//	@Tags			Upload
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			fileId		path		string	true	"File ID"	default("fileId")	example("fileId")
+//	@Param			chunkSize	query		int		false	"Chunk Size"	default(5242880)	example(5242880)
+//	@Param			file		formData	file	true	"File"		default("file")		example("file")
+//	@Success		200			{string}	string	"File uploaded successfully"
+//	@Failure		400			{string}	string	"Bad Request: Invalid file ID or file size exceeds the maximum limit"
+//	@Failure		500			{string}	string	"Internal Server Error: Failed to save file"
+//	@Router			/upload/chunked/{fileId} [post]
 //
 // UploadAutoChunkHandler handles whole file uploads and split them into chunks
 func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
@@ -267,6 +267,19 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 
 // UploadChunkHandler godoc
 //
+//	@Summary		Upload a chunk to a resumable session
+//	@Description	Upload a chunk to a resumable session using the session token and Content-Range header to identify the chunk and its size. The chunk is saved to the server or any other storage.
+//	@Tags			Upload
+//	@Accept			application/json
+//	@Produce		json
+//	@Param			sessionToken	path		string	true	"Session Token"
+//	@Param			Content-Range	header		string	true	"Content-Range header specifying the chunk range"
+//	@Param			body			body		[]byte	true	"Chunk data"
+//	@Success		200				{string}	string	"Chunk uploaded successfully"
+//	@Failure		400				{string}	string	"Bad Request: Invalid session ID or Content-Range header"
+//	@Failure		500				{string}	string	"Internal Server Error: Failed to save chunk"
+//	@Router			/upload/session/{sessionToken}/chunk [post]
+//
 // UploadChunkHandler handles chunk uploads to a resumable session. Using the sessionId and Content-Range header to identify the chunk and its size.
 // The chunk is saved to the server or any other storage.
 // It is useful for large files that need to be uploaded in chunks, especially when the upload can be interrupted and resumed later.
@@ -330,6 +343,18 @@ func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
 }
 
 // GetSessionStatusHandler godoc
+//
+//	@Summary		Get the status of an upload session
+//	@Description	Retrieve the status of an upload session using its session token.
+//	@Tags			Upload
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionToken	path		string	true	"Session Token"
+//	@Success		200				{object}	models.UploadSession	"Session retrieved successfully"
+//	@Failure		400				{string}	string	"Bad Request: Missing session ID"
+//	@Failure		403				{string}	string	"Forbidden: User ID does not match the session owner"
+//	@Failure		500				{string}	string	"Internal Server Error: Failed to fetch session object"
+//	@Router			/upload/session/{sessionToken}/status [get]
 func (uc *UploadController) GetSessionStatusHandler(c *gin.Context) {
 	sessionToken := c.Param("sessionToken")
 	if sessionToken == "" {

@@ -24,7 +24,96 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/auth/login": {
+        "/api/v1/upload/{sessionToken}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve an upload session's metadata using its session token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UploadSession"
+                ],
+                "summary": "Get an upload session by session token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "sessionToken",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.UploadSession"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Missing or invalid session token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found: Session not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/info": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the user information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Returns the user information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
             "post": {
                 "description": "This endpoint authenticates the user by checking the email and password. If the credentials are valid, it generates an access token and a refresh token.",
                 "consumes": [
@@ -1533,6 +1622,281 @@ const docTemplate = `{
                 }
             }
         },
+        "/upload/chunked/{fileId}": {
+            "post": {
+                "description": "Upload a file in chunks (auto chunking) to the server. This endpoint automatically splits the file into chunks and uploads them concurrently. It is useful for larger files or when chunking is needed, i.e., larger than 50MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Upload a file in chunks (auto chunking)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "\"fileId\"",
+                        "example": "\"fileId\"",
+                        "description": "File ID",
+                        "name": "fileId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 5242880,
+                        "example": 5242880,
+                        "description": "Chunk Size",
+                        "name": "chunkSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "file",
+                        "description": "File",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File uploaded successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid file ID or file size exceeds the maximum limit",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error: Failed to save file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/file/{fileID}": {
+            "get": {
+                "description": "Retrieve an upload session's metadata using its associated file ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UploadSession"
+                ],
+                "summary": "Get an upload session by file ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "fileID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.UploadSession"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Missing or invalid file ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found: Session not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Add a chunk to an existing upload session using its associated file ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UploadSession"
+                ],
+                "summary": "Add a chunk to an upload session using file ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File ID",
+                        "name": "fileID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Chunk data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddChunkViaFileIDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chunk added successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid request body or file ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/session/{sessionToken}/chunk": {
+            "post": {
+                "description": "Upload a chunk to a resumable session using the session token and Content-Range header to identify the chunk and its size. The chunk is saved to the server or any other storage.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Upload a chunk to a resumable session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "sessionToken",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content-Range header specifying the chunk range",
+                        "name": "Content-Range",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Chunk data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chunk uploaded successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid session ID or Content-Range header",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error: Failed to save chunk",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/session/{sessionToken}/status": {
+            "get": {
+                "description": "Retrieve the status of an upload session using its session token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Get the status of an upload session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "sessionToken",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/models.UploadSession"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Missing session ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden: User ID does not match the session owner",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error: Failed to fetch session object",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/upload/whole/{fileId}": {
             "post": {
                 "description": "Upload a whole file (without chunking) to the server. This is a simple upload endpoint that does not require chunking. It is useful for smaller files or when chunking is not needed, i.e., lower than 50MB.",
@@ -1572,13 +1936,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request\" \"Invalid file ID or file size exceeds the maximum limit",
+                        "description": "Bad Request: Invalid file ID or Failed to get file from form or file size exceeds the maximum limit",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error\" \"Failed to save file",
+                        "description": "Internal Server Error: Failed to save file",
                         "schema": {
                             "type": "string"
                         }
@@ -1586,17 +1950,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/user": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Returns the user information",
+        "/upload/{sessionToken}": {
+            "put": {
+                "description": "Add a chunk to an existing upload session using its session token.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1604,18 +1960,42 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "UploadSession"
                 ],
-                "summary": "Returns the user information",
+                "summary": "Add a chunk to an upload session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "sessionToken",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Chunk data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddChunkRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Chunk added successfully",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "type": "string"
                         }
                     },
-                    "404": {
-                        "description": "User not found",
+                    "400": {
+                        "description": "Bad Request: Invalid request body or session token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
                         }
@@ -1908,17 +2288,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controllers.SearchResult": {
+        "models.AddChunkRequest": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "is_file": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
+                "chunk_number": {
+                    "description": "The number of the chunk being uploaded",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.AddChunkViaFileIDRequest": {
+            "type": "object",
+            "properties": {
+                "chunk_number": {
+                    "description": "The number of the chunk being uploaded",
+                    "type": "integer"
                 }
             }
         },
@@ -1992,6 +2376,10 @@ const docTemplate = `{
                 "size": {
                     "type": "integer"
                 },
+                "status": {
+                    "description": "Status of the file (e.g., \"uploaded\", \"processing\", \"failed\")",
+                    "type": "string"
+                },
                 "total_chunks": {
                     "description": "ChunkList   []Chunk ` + "`" + `bson:\"chunk_list\" json:\"chunk_list\"` + "`" + `",
                     "type": "integer"
@@ -2030,6 +2418,9 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "integer"
+                },
+                "status": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2397,6 +2788,49 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.FileResponse"
                 },
                 "upload_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UploadSession": {
+            "type": "object",
+            "properties": {
+                "chunk_list": {
+                    "description": "List of chunks that have been uploaded",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "chunk_size": {
+                    "description": "Size of each chunk",
+                    "type": "integer"
+                },
+                "file_id": {
+                    "description": "Reference to the file",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "session_token": {
+                    "description": "Unique session token for the upload session",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status of the upload session (e.g., \"pending\", \"completed\", \"failed\")",
+                    "type": "string"
+                },
+                "total_chunks": {
+                    "description": "Total number of chunks",
+                    "type": "integer"
+                },
+                "total_size": {
+                    "description": "Total size of the file to be uploaded",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "Reference to the user",
                     "type": "string"
                 }
             }

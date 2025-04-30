@@ -1,13 +1,16 @@
 basePath: /
 definitions:
-  controllers.SearchResult:
+  models.AddChunkRequest:
     properties:
-      id:
-        type: string
-      is_file:
-        type: boolean
-      name:
-        type: string
+      chunk_number:
+        description: The number of the chunk being uploaded
+        type: integer
+    type: object
+  models.AddChunkViaFileIDRequest:
+    properties:
+      chunk_number:
+        description: The number of the chunk being uploaded
+        type: integer
     type: object
   models.CreateFolderRequest:
     properties:
@@ -56,6 +59,9 @@ definitions:
         type: string
       size:
         type: integer
+      status:
+        description: Status of the file (e.g., "uploaded", "processing", "failed")
+        type: string
       total_chunks:
         description: ChunkList   []Chunk `bson:"chunk_list" json:"chunk_list"`
         type: integer
@@ -82,6 +88,8 @@ definitions:
         type: string
       size:
         type: integer
+      status:
+        type: string
       updated_at:
         type: string
     type: object
@@ -330,6 +338,37 @@ definitions:
     required:
     - upload_url
     type: object
+  models.UploadSession:
+    properties:
+      chunk_list:
+        description: List of chunks that have been uploaded
+        items:
+          type: integer
+        type: array
+      chunk_size:
+        description: Size of each chunk
+        type: integer
+      file_id:
+        description: Reference to the file
+        type: string
+      id:
+        type: string
+      session_token:
+        description: Unique session token for the upload session
+        type: string
+      status:
+        description: Status of the upload session (e.g., "pending", "completed", "failed")
+        type: string
+      total_chunks:
+        description: Total number of chunks
+        type: integer
+      total_size:
+        description: Total size of the file to be uploaded
+        type: integer
+      user_id:
+        description: Reference to the user
+        type: string
+    type: object
   models.User:
     properties:
       created_at:
@@ -404,7 +443,63 @@ info:
   title: Skybox API and Block Server
   version: "1.0"
 paths:
-  /api/v1/auth/login:
+  /api/v1/upload/{sessionToken}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve an upload session's metadata using its session token.
+      parameters:
+      - description: Session Token
+        in: path
+        name: sessionToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session retrieved successfully
+          schema:
+            $ref: '#/definitions/models.UploadSession'
+        "400":
+          description: 'Bad Request: Missing or invalid session token'
+          schema:
+            type: string
+        "404":
+          description: 'Not Found: Session not found'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get an upload session by session token
+      tags:
+      - UploadSession
+  /api/v1/user/info:
+    get:
+      consumes:
+      - application/json
+      description: Returns the user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "404":
+          description: User not found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Returns the user information
+      tags:
+      - User
+  /auth/login:
     post:
       consumes:
       - application/json
@@ -1406,6 +1501,232 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
+  /upload/{sessionToken}:
+    put:
+      consumes:
+      - application/json
+      description: Add a chunk to an existing upload session using its session token.
+      parameters:
+      - description: Session Token
+        in: path
+        name: sessionToken
+        required: true
+        type: string
+      - description: Chunk data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddChunkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chunk added successfully
+          schema:
+            type: string
+        "400":
+          description: 'Bad Request: Invalid request body or session token'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add a chunk to an upload session
+      tags:
+      - UploadSession
+  /upload/chunked/{fileId}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a file in chunks (auto chunking) to the server. This endpoint
+        automatically splits the file into chunks and uploads them concurrently. It
+        is useful for larger files or when chunking is needed, i.e., larger than 50MB.
+      parameters:
+      - default: '"fileId"'
+        description: File ID
+        example: '"fileId"'
+        in: path
+        name: fileId
+        required: true
+        type: string
+      - default: 5242880
+        description: Chunk Size
+        example: 5242880
+        in: query
+        name: chunkSize
+        type: integer
+      - description: File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File uploaded successfully
+          schema:
+            type: string
+        "400":
+          description: 'Bad Request: Invalid file ID or file size exceeds the maximum
+            limit'
+          schema:
+            type: string
+        "500":
+          description: 'Internal Server Error: Failed to save file'
+          schema:
+            type: string
+      summary: Upload a file in chunks (auto chunking)
+      tags:
+      - Upload
+  /upload/file/{fileID}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve an upload session's metadata using its associated file
+        ID.
+      parameters:
+      - description: File ID
+        in: path
+        name: fileID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session retrieved successfully
+          schema:
+            $ref: '#/definitions/models.UploadSession'
+        "400":
+          description: 'Bad Request: Missing or invalid file ID'
+          schema:
+            type: string
+        "404":
+          description: 'Not Found: Session not found'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get an upload session by file ID
+      tags:
+      - UploadSession
+    put:
+      consumes:
+      - application/json
+      description: Add a chunk to an existing upload session using its associated
+        file ID.
+      parameters:
+      - description: File ID
+        in: path
+        name: fileID
+        required: true
+        type: string
+      - description: Chunk data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddChunkViaFileIDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chunk added successfully
+          schema:
+            type: string
+        "400":
+          description: 'Bad Request: Invalid request body or file ID'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add a chunk to an upload session using file ID
+      tags:
+      - UploadSession
+  /upload/session/{sessionToken}/chunk:
+    post:
+      consumes:
+      - application/json
+      description: Upload a chunk to a resumable session using the session token and
+        Content-Range header to identify the chunk and its size. The chunk is saved
+        to the server or any other storage.
+      parameters:
+      - description: Session Token
+        in: path
+        name: sessionToken
+        required: true
+        type: string
+      - description: Content-Range header specifying the chunk range
+        in: header
+        name: Content-Range
+        required: true
+        type: string
+      - description: Chunk data
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chunk uploaded successfully
+          schema:
+            type: string
+        "400":
+          description: 'Bad Request: Invalid session ID or Content-Range header'
+          schema:
+            type: string
+        "500":
+          description: 'Internal Server Error: Failed to save chunk'
+          schema:
+            type: string
+      summary: Upload a chunk to a resumable session
+      tags:
+      - Upload
+  /upload/session/{sessionToken}/status:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the status of an upload session using its session token.
+      parameters:
+      - description: Session Token
+        in: path
+        name: sessionToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session retrieved successfully
+          schema:
+            $ref: '#/definitions/models.UploadSession'
+        "400":
+          description: 'Bad Request: Missing session ID'
+          schema:
+            type: string
+        "403":
+          description: 'Forbidden: User ID does not match the session owner'
+          schema:
+            type: string
+        "500":
+          description: 'Internal Server Error: Failed to fetch session object'
+          schema:
+            type: string
+      summary: Get the status of an upload session
+      tags:
+      - Upload
   /upload/whole/{fileId}:
     post:
       consumes:
@@ -1434,230 +1755,15 @@ paths:
           schema:
             type: string
         "400":
-          description: Bad Request" "Invalid file ID or file size exceeds the maximum
-            limit
+          description: 'Bad Request: Invalid file ID or Failed to get file from form
+            or file size exceeds the maximum limit'
           schema:
             type: string
         "500":
-          description: Internal Server Error" "Failed to save file
+          description: 'Internal Server Error: Failed to save file'
           schema:
             type: string
       summary: Upload a whole file (without chunking)
       tags:
       - Upload
-  /user:
-    get:
-      consumes:
-      - application/json
-      description: Returns the user information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.User'
-        "404":
-          description: User not found
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      - ApiKeyAuth: []
-      summary: Returns the user information
-      tags:
-      - User
-  /api/v1/user/{userId}:
-    get:
-      consumes:
-      - application/json
-      description: Get user by ID
-      parameters:
-      - description: User ID
-        example: 1234567890abcdef12345678
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.UserResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: User not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get user by ID
-      tags:
-      - User
-  /api/v1/user/email/{email}:
-    get:
-      consumes:
-      - application/json
-      description: Get user by email
-      parameters:
-      - description: User email
-        example: email@example.com
-        in: path
-        name: email
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.UserResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: User not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get user by email
-      tags:
-      - User
-  /api/v1/user/emails:
-    post:
-      consumes:
-      - application/json
-      description: Get users by emails
-      parameters:
-      - description: User emails
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.UserEmailListRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.UserListResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: User not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get users by emails
-      tags:
-      - User
-  /api/v1/user/ids:
-    post:
-      consumes:
-      - application/json
-      description: Get users by IDs
-      parameters:
-      - description: User IDs
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.UserIDListRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.UserListResponse'
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: User not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get users by IDs
-      tags:
-      - User
-  /hello:
-    get:
-      consumes:
-      - application/json
-      description: Returns a hello world message
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Hello World
-          schema:
-            type: string
-      summary: Returns a hello world message
-      tags:
-      - Misc
-  /search:
-    get:
-      consumes:
-      - application/json
-      description: Search for files and folders by query
-      parameters:
-      - description: Owner ID
-        in: query
-        name: ownerId
-        required: true
-        type: string
-      - description: Search query
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/controllers.SearchResult'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Search files and folders
-      tags:
-      - Search
-securityDefinitions:
-  Bearer:
-    description: Use "Bearer {your_token}" to authenticate requests.
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"
