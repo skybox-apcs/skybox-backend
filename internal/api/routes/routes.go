@@ -45,6 +45,9 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 
 		// Setup the file routes
 		NewFileRouters(db, v1)
+
+		// Setup the search routes
+		NewSearchRouters(db, v1)
 	}
 
 	return gin

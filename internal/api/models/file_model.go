@@ -37,4 +37,5 @@ type FileRepository interface {
 	DeleteFile(ctx context.Context, id string) error
 	RenameFile(ctx context.Context, id string, newName string) error
 	MoveFile(ctx context.Context, id string, newParentFolderID string) error
+	SearchFiles(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*File, error) // Search files by name or folder name
 }
