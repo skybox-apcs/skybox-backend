@@ -3,7 +3,6 @@ package services
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"skybox-backend/internal/api/models"
 	blockmodels "skybox-backend/internal/blockserver/models"
 	"skybox-backend/internal/blockserver/storage"
+	"skybox-backend/pkg/utils"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -41,15 +41,6 @@ func NewUploadService() *UploadService {
 		baseURL:  baseURL,
 		s3Client: s3client,
 	}
-}
-
-// HashChunk is a helper function to hash the chunk data
-func HashChunk(chunk []byte) string {
-	// Implement the hashing logic here, e.g. using SHA-256 or MD5
-	// For example, using SHA-256:
-	hasher := sha256.New()
-	hasher.Write(chunk)
-	return fmt.Sprintf("%x", hasher.Sum(nil))
 }
 
 // requestAPIServer is a helper function to send HTTP requests to the API server
@@ -253,7 +244,7 @@ func (us *UploadService) SaveChunk(ctx *gin.Context, fileId string, fileName str
 	chunk := blockmodels.AddChunkSessionRequest{
 		ChunkNumber: chunkIndex,
 		ChunkSize:   len(buf),
-		ChunkHash:   HashChunk(buf),
+		ChunkHash:   utils.HashBytes(buf),
 	}
 
 	if err := us.UpdateSessionRecordByFileId(ctx, fileId, chunk); err != nil {
