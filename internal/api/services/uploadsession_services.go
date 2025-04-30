@@ -46,3 +46,11 @@ func (us *UploadSessionService) AddChunkSessionRecord(ctx context.Context, sessi
 
 	return us.uploadSessionRepository.AddChunkSessionRecord(ctx, sessionToken, chunkNumber)
 }
+
+// AddChunkSessionRecordByFileID adds a chunk to an existing upload session by file ID
+func (us *UploadSessionService) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.uploadSessionRepository.AddChunkSessionRecordByFileID(ctx, fileID, chunkNumber)
+}

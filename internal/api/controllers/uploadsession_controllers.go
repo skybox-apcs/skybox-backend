@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
+	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
 	"skybox-backend/internal/shared"
 
@@ -27,7 +27,29 @@ func (usc *UploadSessionController) GetUploadSessionHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := usc.UploadSessionService.GetSessionRecord(c.Request.Context(), sessionToken)
+	session, err := usc.UploadSessionService.GetSessionRecord(c, sessionToken)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if session == nil {
+		shared.ErrorJSON(c, http.StatusNotFound, "Session not found")
+		return
+	}
+
+	shared.SuccessJSON(c, http.StatusOK, "Session retrieved successfully", session)
+}
+
+// GetSessionRecordByFileIDHandler handles the request to get an upload session by file ID
+func (usc *UploadSessionController) GetSessionRecordByFileIDHandler(c *gin.Context) {
+	fileID := c.Param("fileID")
+	if fileID == "" {
+		shared.ErrorJSON(c, http.StatusBadRequest, "File ID is required")
+		return
+	}
+
+	session, err := usc.UploadSessionService.GetSessionRecordByFileID(c, fileID)
 	if err != nil {
 		c.Error(err)
 		return
@@ -43,15 +65,10 @@ func (usc *UploadSessionController) GetUploadSessionHandler(c *gin.Context) {
 
 // AddChunkHandler handles the request to add a chunk to an upload session
 func (usc *UploadSessionController) AddChunkHandler(c *gin.Context) {
-	type AddChunkRequest struct {
-		ChunkNumber int `json:"chunk_number" binding:"gte=0"`
-	}
-
-	var requestBody AddChunkRequest
+	var requestBody models.AddChunkRequest
 
 	// Read the request body
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		fmt.Println("Error binding JSON:", err)
 		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
@@ -62,7 +79,32 @@ func (usc *UploadSessionController) AddChunkHandler(c *gin.Context) {
 		return
 	}
 
-	err := usc.UploadSessionService.AddChunkSessionRecord(c.Request.Context(), sessionToken, requestBody.ChunkNumber)
+	err := usc.UploadSessionService.AddChunkSessionRecord(c, sessionToken, requestBody.ChunkNumber)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	shared.SuccessJSON(c, http.StatusOK, "Chunk added successfully", nil)
+}
+
+// AddChunkViaFileIDHandler handles the request to add a chunk to an upload session using file ID
+func (usc *UploadSessionController) AddChunkViaFileIDHandler(c *gin.Context) {
+	var requestBody models.AddChunkViaFileIDRequest
+
+	// Read the request body
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	fileID := c.Param("fileID")
+	if fileID == "" {
+		shared.ErrorJSON(c, http.StatusBadRequest, "File ID is required")
+		return
+	}
+
+	err := usc.UploadSessionService.AddChunkSessionRecordByFileID(c, fileID, requestBody.ChunkNumber)
 	if err != nil {
 		c.Error(err)
 		return

@@ -163,6 +163,11 @@ func (m *MockUploadSessionRepository) AddChunkSessionRecord(ctx context.Context,
 	return args.Error(0)
 }
 
+func (m *MockUploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileId string, chunkNumber int) error {
+	args := m.Called(ctx, fileId, chunkNumber)
+	return args.Error(0)
+}
+
 // Setup Mock Services
 func setupMockServices() (*FolderController, *MockFolderRepository, *MockFileRepository, *MockUploadSessionRepository) {
 	mockFolderRepo := new(MockFolderRepository)
