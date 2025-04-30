@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/models"
+	blockmodels "skybox-backend/internal/blockserver/models"
 	"skybox-backend/internal/blockserver/storage"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -41,6 +43,20 @@ func NewUploadService() *UploadService {
 	}
 }
 
+// HashChunk is a helper function to hash the chunk data
+func HashChunk(chunk []byte) string {
+	// Implement the hashing logic here, e.g. using SHA-256 or MD5
+	// For example, using SHA-256:
+	hasher := sha256.New()
+	hasher.Write(chunk)
+	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+// requestAPIServer is a helper function to send HTTP requests to the API server
+// This helper function would be used in the controller to fetch the file object from the API server
+// It handles the request creation, sending, and response handling
+// It also handles the authentication header and content type
+// It returns the response and any error that occurred during the request
 func requestAPIServer(ctx *gin.Context, method string, url string, body interface{}) (*http.Response, error) {
 	// Create an HTTP client with a timeout
 	client := &http.Client{
@@ -234,25 +250,25 @@ func (us *UploadService) SaveChunk(ctx *gin.Context, fileId string, fileName str
 	}
 
 	// Call to API Server to update the session record
-	if err := us.UpdateSessionRecord(ctx, fileId, chunkIndex); err != nil {
+	chunk := blockmodels.AddChunkSessionRequest{
+		ChunkNumber: chunkIndex,
+		ChunkSize:   len(buf),
+		ChunkHash:   HashChunk(buf),
+	}
+
+	if err := us.UpdateSessionRecordByFileId(ctx, fileId, chunk); err != nil {
 		return fmt.Errorf("failed to update session record: %w", err)
 	}
 
 	return nil
 }
 
-func (us *UploadService) UpdateSessionRecordByFileId(ctx *gin.Context, fileId string, chunkIndex int) error {
+func (us *UploadService) UpdateSessionRecordByFileId(ctx *gin.Context, fileId string, chunk blockmodels.AddChunkSessionRequest) error {
 	// Define the API Server URL
 	apiServerURL := fmt.Sprintf("%s/api/v1/upload/file/%s", us.baseURL, fileId)
 
 	// Create an HTTP request
-	var requestBody = struct {
-		ChunkNumber int `json:"chunk_number"`
-	}{
-		ChunkNumber: chunkIndex,
-	}
-
-	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, requestBody)
+	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, chunk)
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %w", err)
 	}
@@ -276,18 +292,12 @@ func (us *UploadService) UpdateSessionRecordByFileId(ctx *gin.Context, fileId st
 	return nil
 }
 
-func (us *UploadService) UpdateSessionRecord(ctx *gin.Context, sessionToken string, chunkIndex int) error {
+func (us *UploadService) UpdateSessionRecord(ctx *gin.Context, sessionToken string, chunk blockmodels.AddChunkSessionRequest) error {
 	// Define the API Server URL
 	apiServerURL := fmt.Sprintf("%s/api/v1/upload/%s", us.baseURL, sessionToken)
 
-	// Create an HTTP request
-	var requestBody = struct {
-		ChunkNumber int `json:"chunk_number"`
-	}{
-		ChunkNumber: chunkIndex,
-	}
-
-	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, requestBody)
+	// Create a HTTP request body
+	resp, err := requestAPIServer(ctx, http.MethodPut, apiServerURL, chunk)
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %w", err)
 	}

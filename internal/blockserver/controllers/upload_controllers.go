@@ -123,7 +123,7 @@ func (uc *UploadController) UploadWholeFileHandler(c *gin.Context) {
 	// Save the file to S3 or any other storage
 	err = uc.UploadService.SaveChunk(c, fileId, fileName, ext, 0, buf.Bytes())
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save file"+err.Error())
+		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save file. Error: "+err.Error())
 		return
 	}
 
@@ -164,7 +164,7 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	// Validate the file
 	err := uc.UploadService.ValidateFile(c, fileId)
 	if err != nil {
-		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid file ID "+err.Error())
+		shared.ErrorJSON(c, http.StatusBadRequest, "Invalid file ID. Error: "+err.Error())
 		return
 	}
 
@@ -195,8 +195,6 @@ func (uc *UploadController) UploadAutoChunkHandler(c *gin.Context) {
 	fileExt := filepath.Ext(fileName)
 	totalSize := header.Size
 	totalChunks := int(math.Ceil(float64(totalSize) / float64(chunkSize)))
-
-	fmt.Printf("Total size: %d, Chunk size: %d, Total chunks: %d\n", totalSize, chunkSize, totalChunks)
 
 	// Worker pool for concurrent chunk uploads
 	uploadChan := make(chan UploadChunk, totalChunks)
@@ -313,7 +311,7 @@ func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	fmt.Printf("Chunk index: %d, Start: %d, End: %d, Size: %d, Actual Size: %d\n", chunkIndex, start, end, int(end-start+1), len(chunkData))
+	fmt.Printf("Chunk index: %d, Start: %d, End: %d, Size: %d, Actual Size: %d, Content-Length: %d\n", chunkIndex, start, end, int(end-start+1), len(chunkData), c.Request.ContentLength)
 	// Check if the chunk size matches the expected size and chunk size is actually less than the default chunk size
 	if len(chunkData) != int(end-start+1) {
 		shared.ErrorJSON(c, http.StatusBadRequest, "Chunk size mismatch")
@@ -328,13 +326,6 @@ func (uc *UploadController) UploadChunkHandler(c *gin.Context) {
 	err = uc.UploadService.SaveChunk(c, fileId, "", "", chunkIndex, chunkData)
 	if err != nil {
 		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to save chunk "+err.Error())
-		return
-	}
-
-	// Update the session record in the database
-	err = uc.UploadService.UpdateSessionRecord(c, sessionToken, chunkIndex)
-	if err != nil {
-		shared.ErrorJSON(c, http.StatusInternalServerError, "Failed to update session record "+err.Error())
 		return
 	}
 
