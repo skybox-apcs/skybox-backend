@@ -257,6 +257,18 @@ func (fc *FileController) PartialDownloadFileHandler(c *gin.Context) {
 }
 
 // FullDownloadFileHandler godoc
+//
+// @Summary Download a file
+// @Description Download a file by its ID. The file is streamed in chunks to the client. The client can request a specific range of bytes using the Range header. If no Range header is provided, the entire file is downloaded.
+// @Tags Files
+// @Accept json
+// @Produce json
+// @Param fileId path string true "File ID" example(1234567890abcdef12345678)
+// @Success 200 {string} string "File downloaded successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /files/{fileId}/download [get]
 func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
@@ -281,23 +293,76 @@ func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
 	// Set the headers for the response
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
 	c.Header("Content-Type", file.MimeType)
-	c.Header("Content-Length", strconv.FormatInt(file.Size, 10))
 	c.Header("Accept-Ranges", "bytes")
-	c.Status(http.StatusOK)
+
+	// Parse the Range header
+	rangeHeader := c.GetHeader("Range")
+	if rangeHeader == "" {
+		// If no Range header, send the full file
+		c.Header("Content-Length", strconv.FormatInt(file.Size, 10))
+		c.Status(http.StatusOK)
+
+		// Stream the file data to the response
+		for i := 0; i < file.TotalChunks; i++ {
+			chunkData, err := fc.FileService.GetFileData(c, fileID, i)
+			if err != nil {
+				c.Error(err)
+				return
+			}
+
+			// Stream the chunk data to the response
+			if _, err := c.Writer.Write(chunkData); err != nil {
+				c.Error(err)
+				return
+			}
+			c.Writer.Flush()
+		}
+
+		return
+	}
+
+	// If Range header is present, handle partial content
+	start, end := parseRangeHeader(rangeHeader, file.Size)
+	if start > end || end >= file.Size {
+		shared.RespondJson(c, http.StatusRequestedRangeNotSatisfiable, "error", "Invalid range", nil)
+		return
+	}
+
+	c.Header("Content-Length", strconv.FormatInt(end-start+1, 10))
+	c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, file.Size))
+	c.Status(http.StatusPartialContent)
 
 	// Stream the file data to the response
-	for i := 0; i < file.TotalChunks; i++ {
-		chunkData, err := fc.FileService.GetFileData(c, fileID, i)
+	buf := new(bytes.Buffer)
+	chunkSize := configs.Config.DefaultChunkSize
+	startChunk := start / chunkSize             // round down to the previous chunk
+	endChunk := (end+chunkSize-1)/chunkSize - 1 // round up to the next chunk and subtract 1 (to get the last chunk index)
+
+	// DEBUG
+	fmt.Printf("ChunkSize: %d, start: %d, end: %d, startChunk: %d, endChunk: %d\n", chunkSize, start, end, startChunk, endChunk)
+
+	// Iterate over the chunks and download them
+	for i := startChunk; i <= endChunk; i++ {
+		chunkData, err := fc.FileService.GetFileData(c, fileID, int(i))
 		if err != nil {
 			c.Error(err)
 			return
 		}
 
-		// Stream the chunk data to the response
-		if _, err := c.Writer.Write(chunkData); err != nil {
-			c.Error(err)
-			return
-		}
-		c.Writer.Flush()
+		chunkStart := int64(i) * int64(chunkSize)
+		forwardStart := max(0, start-chunkStart)
+		forwardEnd := min(int64(len(chunkData)), end-chunkStart+1)
+
+		fmt.Printf("Chunk: %d, chunkStart: %d, forwardStart: %d, forwardEnd: %d\n", i, chunkStart, forwardStart, forwardEnd)
+
+		buf.Write(chunkData[forwardStart:forwardEnd])
 	}
+
+	// Stream the chunk data to the response
+	if _, err := c.Writer.Write(buf.Bytes()); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Writer.Flush()
 }
