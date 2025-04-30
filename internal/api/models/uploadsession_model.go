@@ -25,6 +25,6 @@ type UploadSessionRepository interface {
 	CreateSessionRecord(ctx context.Context, session *UploadSession) (*UploadSession, error)
 	GetSessionRecord(ctx context.Context, sessionToken string) (*UploadSession, error)
 	GetSessionRecordByFileID(ctx context.Context, fileID string) (*UploadSession, error)
-	AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int) error
-	AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int) error
+	AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error
+	AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int, chunkHash string) error
 }

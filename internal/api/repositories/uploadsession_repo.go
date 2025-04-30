@@ -4,6 +4,7 @@ import (
 	"context"
 	"skybox-backend/internal/api/models"
 	"slices"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -68,8 +69,9 @@ func (ur *uploadSessionRepository) GetSessionRecordByFileID(ctx context.Context,
 }
 
 // AddChunkSessionRecord adds a chunk to an existing upload session record
-func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int) error {
+func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error {
 	collection := ur.database.Collection(ur.collection)
+	chunkCollection := ur.database.Collection(models.CollectionChunks)
 
 	// Check if the chunk number already exists in the session record
 	session, err := ur.GetSessionRecord(ctx, sessionToken)
@@ -84,6 +86,18 @@ func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, se
 	_, err = collection.UpdateOne(ctx, bson.M{"session_token": sessionToken}, bson.M{
 		"$addToSet": bson.M{"chunk_list": chunkNumber},
 		"$inc":      bson.M{"actual_size": int64(chunkSize)},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Add the chunk to the Chunk Collection
+	_, err = chunkCollection.InsertOne(ctx, bson.M{
+		"file_id":     session.FileID,
+		"chunk_index": chunkNumber,
+		"chunk_size":  int64(chunkSize),
+		"chunk_hash":  chunkHash,
+		"created_at":  time.Now(),
 	})
 	if err != nil {
 		return err
@@ -113,8 +127,9 @@ func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, se
 }
 
 // AddChunkSessionRecordByFileID adds a chunk to an existing upload session record using file ID
-func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int) error {
+func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int, chunkHash string) error {
 	collection := ur.database.Collection(ur.collection)
+	chunkCollection := ur.database.Collection(models.CollectionChunks)
 
 	// Check if the chunk number already exists in the session record
 	session, err := ur.GetSessionRecordByFileID(ctx, fileID)
@@ -129,6 +144,18 @@ func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Con
 	_, err = collection.UpdateOne(ctx, bson.M{"file_id": session.FileID}, bson.M{
 		"$addToSet": bson.M{"chunk_list": chunkNumber},
 		"$inc":      bson.M{"actual_size": int64(chunkSize)},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Add the chunk to the Chunk Collection
+	_, err = chunkCollection.InsertOne(ctx, bson.M{
+		"file_id":     session.FileID,
+		"chunk_index": chunkNumber,
+		"chunk_size":  int64(chunkSize),
+		"chunk_hash":  chunkHash,
+		"created_at":  time.Now(),
 	})
 	if err != nil {
 		return err

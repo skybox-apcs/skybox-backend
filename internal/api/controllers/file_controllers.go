@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
@@ -20,6 +22,27 @@ func NewFileController(fileService *services.FileService) *FileController {
 	return &FileController{
 		FileService: fileService,
 	}
+}
+
+func parseRangeHeader(rangeHeader string, fileSize int64) (int64, int64) {
+	if !strings.HasPrefix(rangeHeader, "bytes=") {
+		return 0, fileSize - 1 // default to the whole file
+	}
+
+	parts := strings.Split(strings.TrimPrefix(rangeHeader, "bytes="), "-")
+	start, _ := strconv.ParseInt(parts[0], 10, 64)
+	var end int64
+	if len(parts) > 1 && parts[1] != "" {
+		end, _ = strconv.ParseInt(parts[1], 10, 64)
+	} else {
+		end = fileSize - 1 // default to the end of the file
+	}
+
+	if end >= fileSize {
+		end = fileSize - 1 // ensure end is within bounds
+	}
+
+	return start, end
 }
 
 // getFileMetadataHandler godoc
@@ -169,4 +192,30 @@ func (fc *FileController) MoveFileHandler(c *gin.Context) {
 
 	// Send the response
 	shared.RespondJson(c, http.StatusOK, "success", "File moved successfully", nil)
+}
+
+// DownloadFileHandler godoc
+func (fc *FileController) DownloadFileHandler(c *gin.Context) {
+	// Get the file ID from the URL parameters
+	fileID := c.Param("fileId")
+	if fileID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "File ID is required", nil)
+		return
+	}
+
+	// Get the file metadata
+	file, err := fc.FileService.GetFileByID(c, fileID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	rangeHeader := c.GetHeader("Range")
+	start, end := parseRangeHeader(rangeHeader, file.Size)
+	if start > end || end >= file.Size {
+		shared.RespondJson(c, http.StatusRequestedRangeNotSatisfiable, "error", "Invalid range", nil)
+		return
+	}
+
+	// Prepare buffer for the request range
 }
