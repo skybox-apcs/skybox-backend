@@ -29,7 +29,11 @@ func NewFolderRepository(db *mongo.Database, collection string) *folderRepositor
 // CreateFolder creates a new folder
 func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Folder) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
-	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
+	userIDValue := ctx.Value("x-user-id-hex") // Get userID from context x-user-id-hex saved before
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("user ID not found in context or invalid type")
+	}
 
 	// Get the folder ID from the parent folder if it exists
 	if folder.ParentFolderID != primitive.NilObjectID {
@@ -61,7 +65,11 @@ func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 // GetFolderByID retrieves a folder by ID
 func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
-	//userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
+	userIDValue := ctx.Value("x-user-id-hex")
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("user ID not found in context or invalid type")
+	}
 
 	folder := &models.Folder{}
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -389,7 +397,11 @@ func (fr *folderRepository) RenameFolder(ctx context.Context, id string, newName
 
 func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParentID string) error {
 	collection := fr.database.Collection(fr.collection)
-	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
+	userIDValue := ctx.Value("x-user-id-hex")
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return fmt.Errorf("user ID not found in context or invalid type")
+	}
 
 	idHex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
