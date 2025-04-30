@@ -55,7 +55,7 @@ func (fr *FileService) UploadFileMetadata(ctx context.Context, file *models.File
 	}
 
 	// Create the uploadURL based on the uploadSession ID
-	uploadURL := fmt.Sprintf("%s:%s/upload/session/%s/chunk",
+	uploadURL := fmt.Sprintf("http://%s:%s/upload/session/%s/chunk",
 		configs.Config.BlockServerHost,
 		configs.Config.BlockServerPort,
 		sessionToken,
