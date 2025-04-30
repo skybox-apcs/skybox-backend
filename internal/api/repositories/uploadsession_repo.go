@@ -11,20 +11,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type uploadSessionRepository struct {
+type UploadSessionRepository struct {
 	database   *mongo.Database
 	collection string
 }
 
-func NewUploadSessionRepository(db *mongo.Database, collection string) *uploadSessionRepository {
-	return &uploadSessionRepository{
+func NewUploadSessionRepository(db *mongo.Database, collection string) *UploadSessionRepository {
+	return &UploadSessionRepository{
 		database:   db,
 		collection: collection,
 	}
 }
 
 // CreateSessionRecord creates a upload session record in the database
-func (ur *uploadSessionRepository) CreateSessionRecord(ctx context.Context, session *models.UploadSession) (*models.UploadSession, error) {
+func (ur *UploadSessionRepository) CreateSessionRecord(ctx context.Context, session *models.UploadSession) (*models.UploadSession, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	// Create the upload session in the database
@@ -38,7 +38,7 @@ func (ur *uploadSessionRepository) CreateSessionRecord(ctx context.Context, sess
 }
 
 // GetSessionRecord retrieves a upload session record by session token
-func (ur *uploadSessionRepository) GetSessionRecord(ctx context.Context, sessionToken string) (*models.UploadSession, error) {
+func (ur *UploadSessionRepository) GetSessionRecord(ctx context.Context, sessionToken string) (*models.UploadSession, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	var session models.UploadSession
@@ -51,7 +51,7 @@ func (ur *uploadSessionRepository) GetSessionRecord(ctx context.Context, session
 }
 
 // GetSessionRecordByFileID retrieves a upload session record by file ID
-func (ur *uploadSessionRepository) GetSessionRecordByFileID(ctx context.Context, fileID string) (*models.UploadSession, error) {
+func (ur *UploadSessionRepository) GetSessionRecordByFileID(ctx context.Context, fileID string) (*models.UploadSession, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	var session models.UploadSession
@@ -68,7 +68,7 @@ func (ur *uploadSessionRepository) GetSessionRecordByFileID(ctx context.Context,
 	return &session, nil
 }
 
-func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error {
+func (ur *UploadSessionRepository) AddChunkSessionRecord(ctx context.Context, sessionToken string, chunkNumber int, chunkSize int, chunkHash string) error {
 	session, err := ur.database.Client().StartSession()
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (ur *uploadSessionRepository) AddChunkSessionRecord(ctx context.Context, se
 }
 
 // AddChunkSessionRecordByFileID adds a chunk to an existing upload session record using file ID
-func (ur *uploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int, chunkHash string) error {
+func (ur *UploadSessionRepository) AddChunkSessionRecordByFileID(ctx context.Context, fileID string, chunkNumber int, chunkSize int, chunkHash string) error {
 	session, err := ur.database.Client().StartSession()
 	if err != nil {
 		return err

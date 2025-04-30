@@ -23,7 +23,7 @@ func (cs *ChunkService) UploadChunkMetadata(ctx context.Context, fileId string, 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return cs.chunkRepository.UploadChunkMetadata(fileId, chunk)
+	return cs.chunkRepository.UploadChunkMetadata(ctx, fileId, chunk)
 }
 
 // UpdateChunkStatus updates the status of a chunk in the database
@@ -31,7 +31,7 @@ func (cs *ChunkService) UpdateChunkStatus(ctx context.Context, fileId string, ch
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return cs.chunkRepository.UpdateChunkStatus(fileId, chunkIndex, status)
+	return cs.chunkRepository.UpdateChunkStatus(ctx, fileId, chunkIndex, status)
 }
 
 // GetChunksByFileID retrieves all chunks for a specific file from the database
@@ -39,7 +39,7 @@ func (cs *ChunkService) GetChunksByFileID(ctx context.Context, fileId string) ([
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return cs.chunkRepository.GetChunksByFileID(fileId)
+	return cs.chunkRepository.GetChunksByFileID(ctx, fileId)
 }
 
 // GetChunkByID retrieves a chunk by its ID from the database
@@ -47,5 +47,5 @@ func (cs *ChunkService) GetChunkByID(ctx context.Context, id string) (*models.Ch
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return cs.chunkRepository.GetChunkByID(id)
+	return cs.chunkRepository.GetChunkByID(ctx, id)
 }
