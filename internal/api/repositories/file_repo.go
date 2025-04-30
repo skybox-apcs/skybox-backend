@@ -163,3 +163,42 @@ func (fr *fileRepository) MoveFile(ctx context.Context, id string, newParentFold
 
 	return nil
 }
+
+func (fr *fileRepository) SearchFiles(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.File, error) {
+	collection := fr.database.Collection(fr.collection)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Define the filter for searching files
+	filter := bson.M{
+		"$and": []bson.M{
+			{"owner_id": ownerId},
+			{"file_name": bson.M{"$regex": query, "$options": "i"}}, // Case-insensitive regex match
+			{"is_deleted": false}, // Exclude deleted files
+			{"status": "uploaded"},
+		},
+	}
+
+	// Execute the query
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search files: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	// Parse the results
+	var files []*models.File
+	for cursor.Next(ctx) {
+		var file models.File
+		if err := cursor.Decode(&file); err != nil {
+			return nil, fmt.Errorf("failed to decode file: %v", err)
+		}
+		files = append(files, &file)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
+	return files, nil
+}

@@ -43,4 +43,5 @@ type FolderRepository interface {
 	DeleteFolder(ctx context.Context, id string) error
 	RenameFolder(ctx context.Context, id string, newName string) error
 	MoveFolder(ctx context.Context, id string, newParentID string) error
+	SearchFolders(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*Folder, error)
 }

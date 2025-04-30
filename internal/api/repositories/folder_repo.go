@@ -429,3 +429,41 @@ func (fr *folderRepository) MoveFolder(ctx context.Context, id string, newParent
 
 	return err
 }
+
+func (fr *folderRepository) SearchFolders(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.Folder, error) {
+	collection := fr.database.Collection(fr.collection)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Define the filter for searching folders
+	filter := bson.M{
+		"$and": []bson.M{
+			{"owner_id": ownerId},
+			{"name": bson.M{"$regex": query, "$options": "i"}}, // Case-insensitive regex match
+			{"is_deleted": false},                              // Only include non-deleted folders
+		},
+	}
+
+	// Execute the query
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search folders: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	// Parse the results
+	var folders []*models.Folder
+	for cursor.Next(ctx) {
+		var folder models.Folder
+		if err := cursor.Decode(&folder); err != nil {
+			return nil, fmt.Errorf("failed to decode folder: %v", err)
+		}
+		folders = append(folders, &folder)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
+	return folders, nil
+}
