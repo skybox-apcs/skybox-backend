@@ -28,7 +28,11 @@ func NewFileRepository(db *mongo.Database, collection string) *fileRepository {
 func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.File) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
 	folderCollection := fr.database.Collection(models.CollectionFolders)
-	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
+	userIDValue := ctx.Value("x-user-id-hex")
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("user ID not found in context or invalid type")
+	}
 
 	// Get the folder
 	var folder models.Folder
@@ -56,7 +60,11 @@ func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.F
 
 func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
-	//userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
+	userIDValue := ctx.Value("x-user-id-hex")
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("user ID not found in context or invalid type")
+	}
 
 	file := &models.File{}
 	idHex, err := primitive.ObjectIDFromHex(id)
