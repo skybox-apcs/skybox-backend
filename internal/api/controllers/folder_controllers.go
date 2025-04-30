@@ -333,7 +333,7 @@ func (fc *FolderController) MoveFolderHandler(c *gin.Context) {
 // @Produce json
 // @Param folderId path string true "Folder ID" minlength(24) maxlength(24)
 // @Param request body models.UploadFileMetadataRequest true "Upload File Metadata Request"
-// @Success 200 {object} models.UploadFileMetadataResponse
+// @Success 201 {object} models.UploadFileMetadataResponse
 // @Failure 400 {string} string "Invalid request."
 // @Failure 404 {string} string "Folder not found."
 // @Failure 500 {string} string "Internal server error."
@@ -396,6 +396,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 		File: models.FileResponse{
 			ID:             fileMetadata.ID.Hex(),
 			ParentFolderID: fileMetadata.ParentFolderID.Hex(),
+			OwnerID:        fileMetadata.OwnerID.Hex(),
 			OwnerUsername:  ownerUsername,
 			OwnerEmail:     ownerEmail,
 			Name:           fileMetadata.FileName,
@@ -409,7 +410,7 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 	}
 
 	// Send a success response
-	shared.RespondJson(c, http.StatusOK, "success", "File metadata uploaded successfully.", response)
+	shared.RespondJson(c, http.StatusCreated, "success", "File metadata uploaded successfully.", response)
 }
 
 func (fc *FolderController) CheckFolderPermission(c *gin.Context, folderID string, userID string, permission string) (bool, error) {
