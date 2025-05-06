@@ -29,6 +29,9 @@ type File struct {
 
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+
+	OwnerEmail    string `bson:"owner_email,omitempty" json:"owner_email,omitempty"`
+	OwnerUsername string `bson:"owner_username,omitempty" json:"owner_username,omitempty"`
 }
 
 type FileRepository interface {
