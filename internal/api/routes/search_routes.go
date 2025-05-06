@@ -15,9 +15,10 @@ func NewSearchRouters(db *mongo.Database, group *gin.RouterGroup) {
 	// Create repositories
 	fileRepo := repositories.NewFileRepository(db, models.CollectionFiles)
 	folderRepo := repositories.NewFolderRepository(db, models.CollectionFolders)
+	userRepo := repositories.NewUserRepository(db, models.CollectionUsers)
 
 	// Create services
-	searchService := services.NewSearchService(fileRepo, folderRepo)
+	searchService := services.NewSearchService(fileRepo, folderRepo, userRepo)
 
 	// Create controller
 	searchController := controllers.NewSearchController(searchService)

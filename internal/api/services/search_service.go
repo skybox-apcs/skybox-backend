@@ -9,13 +9,15 @@ import (
 type SearchService struct {
 	fileRepository   models.FileRepository
 	folderRepository models.FolderRepository
+	userRepository   models.UserRepository
 }
 
 // NewSearchService creates a new instance of SearchService
-func NewSearchService(fileRepo models.FileRepository, folderRepo models.FolderRepository) *SearchService {
+func NewSearchService(fileRepo models.FileRepository, folderRepo models.FolderRepository, userRepo models.UserRepository) *SearchService {
 	return &SearchService{
 		fileRepository:   fileRepo,
 		folderRepository: folderRepo,
+		userRepository:   userRepo,
 	}
 }
 
@@ -39,6 +41,49 @@ func (ss *SearchService) SearchFilesAndFolders(ctx context.Context, ownerId prim
 	}
 	if folders == nil {
 		folders = []*models.Folder{}
+	}
+
+	// Collect all owner IDs from files and folders
+	ownerIDs := make(map[string]struct{})
+	for _, file := range files {
+		ownerIDs[file.OwnerID.Hex()] = struct{}{}
+	}
+	for _, folder := range folders {
+		ownerIDs[folder.OwnerID.Hex()] = struct{}{}
+	}
+
+	// Convert ownerIDs map keys to a slice
+	ownerIDList := make([]string, 0, len(ownerIDs))
+	for id := range ownerIDs {
+		ownerIDList = append(ownerIDList, id)
+	}
+
+	// Fetch all owners at once
+	owners, err := ss.userRepository.GetUsersByIDs(ctx, ownerIDList)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a map of owner ID to user for quick lookup
+	ownerDict := make(map[string]*models.User)
+	for _, owner := range owners {
+		ownerDict[owner.ID.Hex()] = owner
+	}
+
+	// Add owner_email and owner_username to files
+	for _, file := range files {
+		if owner, exists := ownerDict[file.OwnerID.Hex()]; exists {
+			file.OwnerEmail = owner.Email
+			file.OwnerUsername = owner.Username
+		}
+	}
+
+	// Add owner_email and owner_username to folders
+	for _, folder := range folders {
+		if owner, exists := ownerDict[folder.OwnerID.Hex()]; exists {
+			folder.OwnerEmail = owner.Email
+			folder.OwnerUsername = owner.Username
+		}
 	}
 
 	// Combine results

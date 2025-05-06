@@ -30,6 +30,9 @@ type Folder struct {
 	CreatedAt time.Time  `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `bson:"updated_at" json:"updated_at"`
 	DeletedAt *time.Time `bson:"deleted_at,omitempty" json:"deleted_at,omitempty"` // Nullable field for soft delete
+
+	OwnerEmail    string `bson:"owner_email,omitempty" json:"owner_email,omitempty"`
+	OwnerUsername string `bson:"owner_username,omitempty" json:"owner_username,omitempty"`
 }
 
 type FolderRepository interface {
