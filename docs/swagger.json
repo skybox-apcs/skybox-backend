@@ -329,62 +329,6 @@
                 }
             }
         },
-        "/api/v1/files/{fileId}/download": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Download a file by its ID. The file is streamed in chunks to the client. The client can request a specific range of bytes using the Range header. If no Range header is provided, the entire file is downloaded.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Files"
-                ],
-                "summary": "Download a file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "example": "1234567890abcdef12345678",
-                        "description": "File ID",
-                        "name": "fileId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "File downloaded successfully",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "File not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/files/{fileId}/move": {
             "put": {
                 "security": [
@@ -1533,8 +1477,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.UploadFileMetadataResponse"
                         }
@@ -1966,6 +1910,61 @@
                     },
                     "500": {
                         "description": "Internal Server Error: Failed to fetch session object",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/user/{userID}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve all upload sessions associated with a user ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UploadSession"
+                ],
+                "summary": "Get all upload sessions by user ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (me for current user)",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Status of the upload session (optional)",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Bad Request: Missing or invalid user ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found: No sessions found for the user ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
                         }
