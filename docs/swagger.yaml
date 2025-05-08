@@ -660,44 +660,6 @@ paths:
       summary: Get file metadata
       tags:
       - Files
-  /api/v1/files/{fileId}/download:
-    get:
-      consumes:
-      - application/json
-      description: Download a file by its ID. The file is streamed in chunks to the
-        client. The client can request a specific range of bytes using the Range header.
-        If no Range header is provided, the entire file is downloaded.
-      parameters:
-      - description: File ID
-        example: 1234567890abcdef12345678
-        in: path
-        name: fileId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: File downloaded successfully
-          schema:
-            type: string
-        "400":
-          description: Invalid request body
-          schema:
-            type: string
-        "404":
-          description: File not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Download a file
-      tags:
-      - Files
   /api/v1/files/{fileId}/move:
     put:
       consumes:
@@ -1454,8 +1416,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/models.UploadFileMetadataResponse'
         "400":
@@ -1789,6 +1751,41 @@ paths:
       summary: Get the status of an upload session
       tags:
       - Upload
+  /upload/user/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all upload sessions associated with a user ID.
+      parameters:
+      - description: User ID (me for current user)
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Status of the upload session (optional)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: 'Bad Request: Missing or invalid user ID'
+          schema:
+            type: string
+        "404":
+          description: 'Not Found: No sessions found for the user ID'
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get all upload sessions by user ID
+      tags:
+      - UploadSession
   /upload/whole/{fileId}:
     post:
       consumes:
