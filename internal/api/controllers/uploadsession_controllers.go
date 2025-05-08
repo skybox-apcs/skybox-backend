@@ -100,6 +100,8 @@ func (usc *UploadSessionController) GetSessionRecordByFileIDHandler(c *gin.Conte
 //	@Tags			UploadSession
 //	@Accept			json
 //	@Produce		json
+//	@Param			userID	path		string	true	"User ID (me for current user)"
+//	@Param			status	query		string	false	"Status of the upload session (optional)"
 //	Success		200				{array}	models.UploadSession	"Sessions retrieved successfully"
 //	@Failure		400				{string}	string	"Bad Request: Missing or invalid user ID"
 //	@Failure		404				{string}	string	"Not Found: No sessions found for the user ID"
@@ -109,12 +111,20 @@ func (usc *UploadSessionController) GetSessionRecordByFileIDHandler(c *gin.Conte
 // GetSessionRecordByUserIDHandler handles the request to get all upload sessions by user ID
 func (usc *UploadSessionController) GetSessionRecordByUserIDHandler(c *gin.Context) {
 	userID := c.Param("userID")
-	if userID == "" {
+	if userID == "" || userID == "me" {
 		// Default to the user ID from the JWT token if not provided in the URL
 		userID = c.GetString("x-user-id")
 
 		if userID == "" {
 			shared.ErrorJSON(c, http.StatusBadRequest, "User ID is required")
+			return
+		}
+	}
+
+	statusQuery := c.Query("status")
+	if statusQuery != "" {
+		if statusQuery != "pending" && statusQuery != "completed" {
+			shared.ErrorJSON(c, http.StatusBadRequest, "Invalid status query parameter")
 			return
 		}
 	}
@@ -128,6 +138,17 @@ func (usc *UploadSessionController) GetSessionRecordByUserIDHandler(c *gin.Conte
 	if sessions == nil || len(*sessions) == 0 {
 		shared.ErrorJSON(c, http.StatusNotFound, "No sessions found for the user ID")
 		return
+	}
+
+	// Filter sessions based on status if provided
+	if statusQuery != "" {
+		var filteredSessions []models.UploadSession
+		for _, session := range *sessions {
+			if session.Status == statusQuery {
+				filteredSessions = append(filteredSessions, session)
+			}
+		}
+		sessions = &filteredSessions
 	}
 
 	shared.SuccessJSON(c, http.StatusOK, "Sessions retrieved successfully", sessions)
