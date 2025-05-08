@@ -105,8 +105,8 @@ func GetKeyFromToken(key string, requestToken string, secret string) (string, er
 	return claims[key].(string), nil
 }
 
-// CreateSessionToken creates a session token to upload file for the user
-func CreateSessionToken(data map[string]string, secret string, expiry int) (string, error) {
+// GenerateToken generates a custom interface token
+func GenerateToken(data map[string]string, secret string, expiry int) (string, error) {
 	// Calculate the expiry date
 	exp := time.Now().Add(time.Duration(expiry) * time.Hour).Unix()
 
@@ -123,10 +123,46 @@ func CreateSessionToken(data map[string]string, secret string, expiry int) (stri
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token
-	sessionToken, err := token.SignedString([]byte(secret))
+	customToken, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", fmt.Errorf("error while signing token: %w", err)
 	}
 
-	return sessionToken, nil
+	return customToken, nil
+}
+
+// GetKeysFromToken gets all claims from the token
+func GetKeysFromToken(requestToken string, secret string) (map[string]string, error) {
+	// Parse the token
+	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error while parsing token: %w", err)
+	}
+
+	// Get the claims from the token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok && !token.Valid {
+		return nil, fmt.Errorf("error while getting claims from token")
+	}
+
+	data := make(map[string]string)
+	for key, value := range claims {
+		switch v := value.(type) {
+		case string:
+			data[key] = v
+		case float64:
+			data[key] = fmt.Sprintf("%f", v)
+		default:
+			return nil, fmt.Errorf("unsupported type for key %s: %T", key, v)
+		}
+	}
+
+	return data, nil
 }
