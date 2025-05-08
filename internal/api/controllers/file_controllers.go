@@ -1,16 +1,14 @@
 package controllers
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/services"
 	"skybox-backend/internal/shared"
+	"skybox-backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,27 +23,6 @@ func NewFileController(fileService *services.FileService) *FileController {
 	return &FileController{
 		FileService: fileService,
 	}
-}
-
-func parseRangeHeader(rangeHeader string, fileSize int64) (int64, int64) {
-	if !strings.HasPrefix(rangeHeader, "bytes=") {
-		return 0, fileSize - 1 // default to the whole file
-	}
-
-	parts := strings.Split(strings.TrimPrefix(rangeHeader, "bytes="), "-")
-	start, _ := strconv.ParseInt(parts[0], 10, 64)
-	var end int64
-	if len(parts) > 1 && parts[1] != "" {
-		end, _ = strconv.ParseInt(parts[1], 10, 64)
-	} else {
-		end = fileSize - 1 // default to the end of the file
-	}
-
-	if end >= fileSize {
-		end = fileSize - 1 // ensure end is within bounds
-	}
-
-	return start, end
 }
 
 // getFileMetadataHandler godoc
@@ -197,65 +174,6 @@ func (fc *FileController) MoveFileHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "File moved successfully", nil)
 }
 
-// PartialDownloadFileHandler godoc
-func (fc *FileController) PartialDownloadFileHandler(c *gin.Context) {
-	// Get the file ID from the URL parameters
-	fileID := c.Param("fileId")
-	if fileID == "" {
-		shared.RespondJson(c, http.StatusBadRequest, "error", "File ID is required", nil)
-		return
-	}
-
-	// Get the file metadata
-	file, err := fc.FileService.GetFileByID(c, fileID)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	// Check if the file uploaded
-	if file.Status != "uploaded" {
-		shared.RespondJson(c, http.StatusBadRequest, "error", "File is not uploaded yet", nil)
-		return
-	}
-
-	// Check if the Range header is present
-	rangeHeader := c.GetHeader("Range")
-	start, end := parseRangeHeader(rangeHeader, file.Size)
-	if start > end || end >= file.Size {
-		shared.RespondJson(c, http.StatusRequestedRangeNotSatisfiable, "error", "Invalid range", nil)
-		return
-	}
-
-	// Prepare buffer for the request range
-	buf := new(bytes.Buffer)
-	chunkSize := configs.Config.DefaultChunkSize
-	startChunk := start / chunkSize               // round down to the previous chunk
-	endChunk := (end + chunkSize - 1) / chunkSize // round up to the next chunk
-
-	// Iterate over the chunks and download them
-	for i := startChunk; i <= endChunk; i++ {
-		chunkData, err := fc.FileService.GetFileData(c, fileID, int(i))
-		if err != nil {
-			c.Error(err)
-			return
-		}
-
-		chunkStart := int64(i) * int64(chunkSize)
-		forwardStart := max(0, start-chunkStart)
-		forwardEnd := min(int64(len(chunkData)), end-chunkStart+1)
-
-		buf.Write(chunkData[forwardStart:forwardEnd])
-	}
-
-	// Set the headers for the response
-	c.Header("Content-Type", file.MimeType)
-	c.Header("Accept-Ranges", "bytes")
-	c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, file.Size))
-	c.Status(http.StatusPartialContent)
-	c.Writer.Write(buf.Bytes())
-}
-
 // FullDownloadFileHandler godoc
 //
 // @Summary Download a file
@@ -291,79 +209,29 @@ func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
 		return
 	}
 
-	// Set the headers for the response
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.FileName))
-	c.Header("Content-Type", file.MimeType)
-	c.Header("Accept-Ranges", "bytes")
-
-	// Parse the Range header
-	rangeHeader := c.GetHeader("Range")
-	if rangeHeader == "" {
-		// If no Range header, send the full file
-		c.Header("Content-Length", strconv.FormatInt(file.Size, 10))
-		c.Status(http.StatusOK)
-
-		// Stream the file data to the response
-		for i := 0; i < file.TotalChunks; i++ {
-			chunkData, err := fc.FileService.GetFileData(c, fileID, i)
-			if err != nil {
-				c.Error(err)
-				return
-			}
-
-			// Stream the chunk data to the response
-			if _, err := c.Writer.Write(chunkData); err != nil {
-				c.Error(err)
-				return
-			}
-			c.Writer.Flush()
-		}
-
-		return
-	}
-
-	// If Range header is present, handle partial content
-	start, end := parseRangeHeader(rangeHeader, file.Size)
-	if start > end || end >= file.Size {
-		shared.RespondJson(c, http.StatusRequestedRangeNotSatisfiable, "error", "Invalid range", nil)
-		return
-	}
-
-	c.Header("Content-Length", strconv.FormatInt(end-start+1, 10))
-	c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, file.Size))
-	c.Status(http.StatusPartialContent)
-
-	// Stream the file data to the response
-	buf := new(bytes.Buffer)
-	chunkSize := configs.Config.DefaultChunkSize
-	startChunk := start / chunkSize             // round down to the previous chunk
-	endChunk := (end+chunkSize-1)/chunkSize - 1 // round up to the next chunk and subtract 1 (to get the last chunk index)
-
-	// DEBUG
-	fmt.Printf("ChunkSize: %d, start: %d, end: %d, startChunk: %d, endChunk: %d\n", chunkSize, start, end, startChunk, endChunk)
-
-	// Iterate over the chunks and download them
-	for i := startChunk; i <= endChunk; i++ {
-		chunkData, err := fc.FileService.GetFileData(c, fileID, int(i))
-		if err != nil {
-			c.Error(err)
-			return
-		}
-
-		chunkStart := int64(i) * int64(chunkSize)
-		forwardStart := max(0, start-chunkStart)
-		forwardEnd := min(int64(len(chunkData)), end-chunkStart+1)
-
-		fmt.Printf("Chunk: %d, chunkStart: %d, forwardStart: %d, forwardEnd: %d\n", i, chunkStart, forwardStart, forwardEnd)
-
-		buf.Write(chunkData[forwardStart:forwardEnd])
-	}
-
-	// Stream the chunk data to the response
-	if _, err := c.Writer.Write(buf.Bytes()); err != nil {
+	// Generate token
+	token, err := utils.GenerateToken(
+		map[string]string{
+			"fileId":      fileID,
+			"ownerId":     file.OwnerID.Hex(),
+			"totalChunks": fmt.Sprintf("%d", file.TotalChunks),
+			"fileName":    file.FileName,
+			"fileSize":    fmt.Sprintf("%d", file.Size),
+		},
+		configs.Config.JWTSecret,
+		1,
+	)
+	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	c.Writer.Flush()
+	// Generate the download URL for the block server
+	downloadURL := fmt.Sprintf("http://%s:%s/download/%s?token=%s",
+		configs.Config.BlockServerHost,
+		configs.Config.BlockServerPort,
+		fileID,
+		token,
+	)
+	c.Redirect(http.StatusFound, downloadURL)
 }

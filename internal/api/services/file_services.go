@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"skybox-backend/configs"
 	"skybox-backend/internal/api/models"
@@ -90,43 +89,4 @@ func (fr *FileService) MoveFile(ctx context.Context, id string, newParentFolderI
 	defer cancel()
 
 	return fr.fileRepository.MoveFile(ctx, id, newParentFolderID)
-}
-
-// GetFileData retrieves the file data for a given file ID and chunk number
-// It returns the file data as a byte slice and an error if any occurs
-func (fr *FileService) GetFileData(ctx context.Context, fileId string, chunkNumber int) ([]byte, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Get the file metadata
-	file, err := fr.fileRepository.GetFileByID(ctx, fileId)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if the chunk number is valid
-	if chunkNumber < 0 || chunkNumber >= file.TotalChunks {
-		return nil, fmt.Errorf("invalid chunk number: %d", chunkNumber)
-	}
-
-	// Get the file data for the specified chunk number
-	key := fmt.Sprintf("%s/%s_%d", file.OwnerID.Hex(), file.ID.Hex(), chunkNumber)
-	data := []byte{} // Placeholder for the actual data retrieval
-
-	if configs.Config.AWSEnabled {
-		// TODO: Implement AWS S3 chunk retrieval
-	} else {
-		// Local file retrieval
-		// Use local directorty for testing purposes
-		full_key := fmt.Sprintf("tmp/%s", key)
-
-		data, err = os.ReadFile(full_key)
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve file data: %w", err)
-		}
-	}
-
-	// TODO: Hash checking
-
-	return data, nil
 }

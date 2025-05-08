@@ -22,6 +22,9 @@ func SetupRouter(gin *gin.Engine) *gin.Engine {
 	{
 		// Hello World routes
 		v1.GET("/hello", controllers.HelloWorldHandler)
+
+		// Download routes
+		NewDownloadRouters(v1)
 	}
 
 	// Private routes
