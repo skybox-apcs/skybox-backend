@@ -27,6 +27,5 @@ func NewFileRouters(db *mongo.Database, group *gin.RouterGroup) {
 		fileGroup.PUT("/:fileId/move", fc.MoveFileHandler)
 
 		fileGroup.GET("/:fileId/download", fc.FullDownloadFileHandler)
-		fileGroup.GET("/:fileId/partial_download", fc.PartialDownloadFileHandler)
 	}
 }
