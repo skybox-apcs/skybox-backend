@@ -48,6 +48,21 @@ func parseRangeHeader(rangeHeader string, fileSize int64) (int64, int64) {
 	return start, end
 }
 
+// DownloadFileHandler godoc
+//
+// @Summary Download a file
+// @Description Download a file by its ID. The file ID is a unique identifier for the file in the database. The file is downloaded in chunks to optimize performance and reduce memory usage.
+// @Tags Files
+// @Accept json
+// @Produce json
+// @Param fileId path string true "File ID" example(1234567890abcdef12345678)
+// @Param token query string true "Token" example(eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWxlTmFtZSI6InRlc3QuanBnIiwib3duZXJJZCI6IjEyMzQ1Njc4OWFiY2RlZiIsImZpbGVTaXplIjoxMjM0NTY3ODkwLCJ0b3RhbENodW5rcyI6MTIzNDU2Nzg5MCwibWltZVR5cGUiOiJpbWFnZS9qcGcifQ.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWxlTmFtZSI6InRlc3QuanBnIiwib3duZXJJZCI6IjEyMzQ1Njc4OWFiY2RlZiIsImZpbGVTaXplIjoxMjM0NTY3ODkwLCJ0b3RhbENodW5rcyI6MTIzNDU2Nzg5MCwibWltZVR5cGUiOiJpbWFnZS9qcGcifQ)
+// @Success 200 {string} string "File downloaded successfully"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 404 {string} string "File not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /download/{fileId} [get]
 // DownloadFileHandler handles the file download request
 func (dc *DownloadController) DownloadFileHandler(c *gin.Context) {
 	// Since everything is vefied by the API Server, we don't need to verify the file metadata again
@@ -83,6 +98,9 @@ func (dc *DownloadController) DownloadFileHandler(c *gin.Context) {
 		return
 	}
 	mimeType := data["mimeType"]
+	if mimeType == "" {
+		mimeType = "application/octet-stream" // Default MIME type if not provided
+	}
 
 	// Set the headers for the response
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
@@ -133,7 +151,7 @@ func (dc *DownloadController) DownloadFileHandler(c *gin.Context) {
 	endChunk := (end+chunkSize-1)/chunkSize - 1 // round up to the next chunk and subtract 1 (to get the last chunk index)
 
 	// DEBUG
-	fmt.Printf("ChunkSize: %d, start: %d, end: %d, startChunk: %d, endChunk: %d\n", chunkSize, start, end, startChunk, endChunk)
+	// fmt.Printf("ChunkSize: %d, start: %d, end: %d, startChunk: %d, endChunk: %d\n", chunkSize, start, end, startChunk, endChunk)
 
 	// Iterate over the chunks and download them
 	for i := startChunk; i <= endChunk; i++ {
@@ -147,7 +165,7 @@ func (dc *DownloadController) DownloadFileHandler(c *gin.Context) {
 		forwardStart := max(0, start-chunkStart)
 		forwardEnd := min(int64(len(chunkData)), end-chunkStart+1)
 
-		fmt.Printf("Chunk: %d, chunkStart: %d, forwardStart: %d, forwardEnd: %d\n", i, chunkStart, forwardStart, forwardEnd)
+		// fmt.Printf("Chunk: %d, chunkStart: %d, forwardStart: %d, forwardEnd: %d\n", i, chunkStart, forwardStart, forwardEnd)
 
 		buf.Write(chunkData[forwardStart:forwardEnd])
 	}

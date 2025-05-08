@@ -176,18 +176,19 @@ func (fc *FileController) MoveFileHandler(c *gin.Context) {
 
 // FullDownloadFileHandler godoc
 //
-// @Summary Download a file
-// @Description Download a file by its ID. The file is streamed in chunks to the client. The client can request a specific range of bytes using the Range header. If no Range header is provided, the entire file is downloaded.
-// @Security		Bearer
+// @Summary Redirect to download a file
+// @Description Redirects the client to the block server's file streaming endpoint. The client can request partial content using the Range header. The actual file is downloaded from the block server, not this API.
 // @Tags Files
-// @Accept json
-// @Produce json
+// @Security Bearer
+// @Accept */*
+// @Produce */*
 // @Param fileId path string true "File ID" example(1234567890abcdef12345678)
-// @Success 200 {string} string "File downloaded successfully"
-// @Failure 400 {string} string "Invalid request body"
+// @Success 302 {string} string "Redirect to download URL"
+// @Failure 400 {string} string "Bad request"
 // @Failure 404 {string} string "File not found"
 // @Failure 500 {string} string "Internal server error"
 // @Router /api/v1/files/{fileId}/download [get]
+
 func (fc *FileController) FullDownloadFileHandler(c *gin.Context) {
 	// Get the file ID from the URL parameters
 	fileID := c.Param("fileId")
