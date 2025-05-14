@@ -56,7 +56,7 @@ func (fr *fileRepository) UploadFileMetadata(ctx context.Context, file *models.F
 
 func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
-	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
+	//userID := ctx.Value("x-user-id-hex").(primitive.ObjectID)
 
 	file := &models.File{}
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -65,7 +65,7 @@ func (fr *fileRepository) GetFileByID(ctx context.Context, id string) (*models.F
 	}
 
 	// Find the file by ID and isDeleted := false
-	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false, "owner_id": userID}).Decode(file)
+	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false}).Decode(file)
 	if err == nil {
 		return file, nil
 	}

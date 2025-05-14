@@ -5,6 +5,7 @@ import (
 	"skybox-backend/internal/api/models"
 	"skybox-backend/internal/api/repositories"
 	"skybox-backend/internal/api/services"
+	"skybox-backend/internal/shared/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,13 +19,19 @@ func NewFileRouters(db *mongo.Database, group *gin.RouterGroup) {
 		FileService: services.NewFileService(fr),
 	}
 
+	folderRepo := repositories.NewFolderRepository(db, models.CollectionFolders)
+	folderController := &controllers.FolderController{
+		FolderService: services.NewFolderService(folderRepo),
+		FileService:   services.NewFileService(fr),
+	}
+
 	// Create a new group for the file routes
 	fileGroup := group.Group("/files")
 	{
-		fileGroup.GET("/:fileId", fc.GetFileMetadataHandler)
-		fileGroup.DELETE("/:fileId", fc.DeleteFileHandler)
-		fileGroup.PUT("/:fileId/rename", fc.RenameFileHandler)
-		fileGroup.PATCH("/:fileId/rename", fc.RenameFileHandler)
-		fileGroup.PUT("/:fileId/move", fc.MoveFileHandler)
+		fileGroup.GET("/:fileId", middlewares.FilePermissionMiddleware(folderController, "view"), fc.GetFileMetadataHandler)
+		fileGroup.DELETE("/:fileId", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.DeleteFileHandler)
+		fileGroup.PUT("/:fileId/rename", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.RenameFileHandler)
+		fileGroup.PATCH("/:fileId/rename", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.RenameFileHandler)
+		fileGroup.PUT("/:fileId/move", middlewares.FilePermissionMiddleware(folderController, "edit"), fc.MoveFileHandler)
 	}
 }

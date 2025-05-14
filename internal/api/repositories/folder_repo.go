@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 
 	"skybox-backend/internal/api/models"
@@ -60,7 +61,7 @@ func (fr *folderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 // GetFolderByID retrieves a folder by ID
 func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
-	userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
+	//userID := ctx.Value("x-user-id-hex").(primitive.ObjectID) // Get userID from context x-user-id-hex saved before
 
 	folder := &models.Folder{}
 	idHex, err := primitive.ObjectIDFromHex(id)
@@ -70,7 +71,7 @@ func (fr *folderRepository) GetFolderByID(ctx context.Context, id string) (*mode
 
 	// Find the folder by ID and isDeleted := false
 	// Owner priority
-	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false, "owner_id": userID}).Decode(folder)
+	err = collection.FindOne(ctx, bson.M{"_id": idHex, "is_deleted": false}).Decode(folder)
 	if err == nil {
 		// If the folder is found, return it
 		return folder, nil
@@ -466,4 +467,260 @@ func (fr *folderRepository) SearchFolders(ctx context.Context, ownerId primitive
 	}
 
 	return folders, nil
+}
+
+func (fr *folderRepository) UpdateFolderPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+	collection := fr.database.Collection(fr.collection)
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+
+	_, err = collection.UpdateOne(ctx, bson.M{"_id": folderIDHex}, bson.M{
+		"$set": bson.M{"is_public": isPublic},
+	})
+	return err
+}
+
+func (fr *folderRepository) UpdateFolderAndAllSubfoldersPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+	collection := fr.database.Collection(fr.collection)
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+
+	// Use a queue for BFS traversal
+	queue := []primitive.ObjectID{folderIDHex}
+	visited := []primitive.ObjectID{} // List to gather all visited nodes
+
+	for len(queue) > 0 {
+		// Dequeue the first folder
+		currentFolderID := queue[0]
+		queue = queue[1:]
+
+		// Add the current folder to the visited list
+		visited = append(visited, currentFolderID)
+
+		// Find all subfolders of the current folder
+		cursor, err := collection.Find(ctx, bson.M{"parent_folder_id": currentFolderID})
+		if err != nil {
+			return err
+		}
+		defer cursor.Close(ctx)
+
+		// Add subfolders to the queue
+		for cursor.Next(ctx) {
+			var subFolder models.Folder
+			if err := cursor.Decode(&subFolder); err != nil {
+				return err
+			}
+			queue = append(queue, subFolder.ID)
+		}
+	}
+
+	// Perform a single update query for all visited folders
+	_, err = collection.UpdateMany(ctx, bson.M{"_id": bson.M{"$in": visited}}, bson.M{
+		"$set": bson.M{"is_public": isPublic},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fr *folderRepository) GetFolderShareInfo(ctx context.Context, folderID string) (bool, error) {
+	collection := fr.database.Collection(fr.collection)
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return false, fmt.Errorf("invalid folder ID")
+	}
+
+	folder := &models.Folder{}
+	err = collection.FindOne(ctx, bson.M{"_id": folderIDHex}).Decode(folder)
+	if err != nil {
+		return false, err
+	}
+
+	return folder.IsPublic, nil
+}
+
+func (fr *folderRepository) GetFolderSharedUsers(ctx context.Context, folderID string) ([]*models.FolderSharedUser, error) {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid folder ID")
+	}
+
+	cursor, err := collection.Find(ctx, bson.M{"folder_id": folderIDHex})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var sharedUsers []*models.FolderSharedUser
+	if err := cursor.All(ctx, &sharedUsers); err != nil {
+		return nil, err
+	}
+
+	return sharedUsers, nil
+}
+
+func (fr *folderRepository) GetFolderSharedUser(ctx context.Context, folderID string, userID string) (*models.FolderSharedUser, error) {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid folder ID")
+	}
+	userIDHex, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	sharedUser := &models.FolderSharedUser{}
+	err = collection.FindOne(ctx, bson.M{"folder_id": folderIDHex, "user_id": userIDHex}).Decode(sharedUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return sharedUser, nil
+}
+
+func (fr *folderRepository) ShareFolder(ctx context.Context, folderID, userID string, permission bool) error {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+	userIDHex, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID")
+	}
+
+	_, err = collection.UpdateOne(ctx, bson.M{"folder_id": folderIDHex, "user_id": userIDHex}, bson.M{
+		"$set": bson.M{"permission": permission},
+	}, options.Update().SetUpsert(true))
+	return err
+}
+
+func (fr *folderRepository) RemoveFolderShare(ctx context.Context, folderID, userID string) error {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+	userIDHex, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID")
+	}
+
+	_, err = collection.DeleteOne(ctx, bson.M{"folder_id": folderIDHex, "user_id": userIDHex})
+	return err
+}
+
+func (fr *folderRepository) ShareFolderAndAllSubfolders(ctx context.Context, folderID, userID string, permission bool) error {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+	folderCollection := fr.database.Collection(fr.collection)
+
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+	userIDHex, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID")
+	}
+
+	// Collect all folder IDs using BFS
+	queue := []primitive.ObjectID{folderIDHex}
+	var folderIDs []primitive.ObjectID
+
+	for len(queue) > 0 {
+		currentFolderID := queue[0]
+		queue = queue[1:]
+		folderIDs = append(folderIDs, currentFolderID)
+
+		// Find all subfolders
+		cursor, err := folderCollection.Find(ctx, bson.M{"parent_folder_id": currentFolderID})
+		if err != nil {
+			return err
+		}
+		defer cursor.Close(ctx)
+
+		for cursor.Next(ctx) {
+			var subFolder models.Folder
+			if err := cursor.Decode(&subFolder); err != nil {
+				return err
+			}
+			queue = append(queue, subFolder.ID)
+		}
+	}
+
+	// Perform a single bulk update for all folder IDs
+	var operations []mongo.WriteModel
+	for _, folderID := range folderIDs {
+		operations = append(operations, mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"folder_id": folderID, "user_id": userIDHex}).
+			SetUpdate(bson.M{"$set": bson.M{"permission": permission}}).
+			SetUpsert(true))
+	}
+
+	if len(operations) > 0 {
+		_, err = collection.BulkWrite(ctx, operations)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (fr *folderRepository) RevokeFolderAndAllSubfoldersShare(ctx context.Context, folderID, userID string) error {
+	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
+	folderCollection := fr.database.Collection(fr.collection)
+
+	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID")
+	}
+	userIDHex, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID")
+	}
+
+	// Collect all folder IDs using BFS
+	queue := []primitive.ObjectID{folderIDHex}
+	var folderIDs []primitive.ObjectID
+
+	for len(queue) > 0 {
+		currentFolderID := queue[0]
+		queue = queue[1:]
+		folderIDs = append(folderIDs, currentFolderID)
+
+		// Find all subfolders
+		cursor, err := folderCollection.Find(ctx, bson.M{"parent_folder_id": currentFolderID})
+		if err != nil {
+			return err
+		}
+		defer cursor.Close(ctx)
+
+		for cursor.Next(ctx) {
+			var subFolder models.Folder
+			if err := cursor.Decode(&subFolder); err != nil {
+				return err
+			}
+			queue = append(queue, subFolder.ID)
+		}
+	}
+
+	// Perform a single delete operation for all folder IDs
+	_, err = collection.DeleteMany(ctx, bson.M{"folder_id": bson.M{"$in": folderIDs}, "user_id": userIDHex})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

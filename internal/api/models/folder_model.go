@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	CollectionFolders = "folders"
+	CollectionFolders           = "folders"
+	CollectionFolderSharedUsers = "folder_shared_users"
 )
 
 type FolderStat struct {
@@ -26,6 +27,7 @@ type Folder struct {
 	IsDeleted      bool               `bson:"is_deleted" json:"is_deleted"`
 	Stats          FolderStat         `bson:"stats" json:"stats"`
 	IsRoot         bool               `bson:"is_root" json:"is_root"` // Indicates if this is a root folder
+	IsPublic       bool               `bson:"is_public" json:"is_public"`
 
 	CreatedAt time.Time  `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `bson:"updated_at" json:"updated_at"`
@@ -33,6 +35,12 @@ type Folder struct {
 
 	OwnerEmail    string `bson:"owner_email,omitempty" json:"owner_email,omitempty"`
 	OwnerUsername string `bson:"owner_username,omitempty" json:"owner_username,omitempty"`
+}
+
+type FolderSharedUser struct {
+	FolderID   primitive.ObjectID `bson:"folder_id" json:"folder_id"`
+	UserID     primitive.ObjectID `bson:"user_id" json:"user_id"`
+	Permission bool               `bson:"permission" json:"permission"` // "view" or "edit"
 }
 
 type FolderRepository interface {
@@ -47,4 +55,13 @@ type FolderRepository interface {
 	RenameFolder(ctx context.Context, id string, newName string) error
 	MoveFolder(ctx context.Context, id string, newParentID string) error
 	SearchFolders(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*Folder, error)
+	UpdateFolderPublicStatus(ctx context.Context, folderID string, isPublic bool) error
+	UpdateFolderAndAllSubfoldersPublicStatus(ctx context.Context, folderID string, isPublic bool) error
+	GetFolderShareInfo(ctx context.Context, folderID string) (bool, error)
+	GetFolderSharedUsers(ctx context.Context, folderID string) ([]*FolderSharedUser, error)
+	GetFolderSharedUser(ctx context.Context, folderID string, userID string) (*FolderSharedUser, error)
+	ShareFolder(ctx context.Context, folderID, userID string, permission bool) error
+	RemoveFolderShare(ctx context.Context, folderID, userID string) error
+	ShareFolderAndAllSubfolders(ctx context.Context, folderID, userID string, permission bool) error
+	RevokeFolderAndAllSubfoldersShare(ctx context.Context, folderID, userID string) error
 }
