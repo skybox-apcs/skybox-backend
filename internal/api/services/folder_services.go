@@ -87,3 +87,66 @@ func (fr *FolderService) MoveFolder(ctx context.Context, id string, newParentID 
 
 	return fr.folderRepository.MoveFolder(ctx, id, newParentID)
 }
+
+func (fs *FolderService) GetFolderSharedUsers(ctx context.Context, folderID string) ([]*models.FolderSharedUser, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.GetFolderSharedUsers(ctx, folderID)
+}
+
+func (fs *FolderService) GetFolderShareInfo(ctx context.Context, folderID string) (bool, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.GetFolderShareInfo(ctx, folderID)
+}
+
+func (fs *FolderService) GetFolderSharedUser(ctx context.Context, folderID string, userID string) (*models.FolderSharedUser, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.GetFolderSharedUser(ctx, folderID, userID)
+}
+
+func (fs *FolderService) UpdateFolderPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.UpdateFolderPublicStatus(ctx, folderID, isPublic)
+}
+
+func (fs *FolderService) UpdateFolderAndSubfoldersPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.UpdateFolderAndAllSubfoldersPublicStatus(ctx, folderID, isPublic)
+}
+
+func (fs *FolderService) ShareFolder(ctx context.Context, folderID, userID string, permission bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.ShareFolder(ctx, folderID, userID, permission)
+}
+
+func (fs *FolderService) RemoveFolderShare(ctx context.Context, folderID, userID string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.RemoveFolderShare(ctx, folderID, userID)
+}
+
+func (fs *FolderService) ShareFolderAndSubfolders(ctx context.Context, folderID, userID string, permission bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.ShareFolderAndAllSubfolders(ctx, folderID, userID, permission)
+}
+
+func (fs *FolderService) RevokeFolderAndSubfoldersShare(ctx context.Context, folderID, userID string) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return fs.folderRepository.RevokeFolderAndAllSubfoldersShare(ctx, folderID, userID)
+}

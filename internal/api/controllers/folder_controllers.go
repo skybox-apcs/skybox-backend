@@ -409,3 +409,266 @@ func (fc *FolderController) UploadFileMetadataHandler(c *gin.Context) {
 	// Send a success response
 	shared.RespondJson(c, http.StatusOK, "success", "File metadata uploaded successfully.", response)
 }
+
+func (fc *FolderController) CheckFolderPermission(c *gin.Context, folderID string, userID string, permission string) (bool, error) {
+	// Check if the user has a specific shared permission
+	sharedUser, err := fc.FolderService.GetFolderSharedUser(c, folderID, userID)
+	if err == nil {
+		if permission == "edit" {
+			return sharedUser.Permission, nil
+		}
+		return true, nil // View permission
+	}
+
+	// Get tge folder owner ID and check if the user is the owner
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err == nil {
+		if folder.OwnerID.Hex() == userID {
+			return true, nil // Owner has all permissions
+		}
+	}
+
+	if permission == "edit" {
+		return false, nil // No edit permission
+	}
+
+	// If no shared permission, check if the folder is public
+	isPublic, err := fc.FolderService.GetFolderShareInfo(c, folderID)
+	if err != nil {
+		return false, err
+	}
+
+	return isPublic, nil
+}
+
+func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		IsPublic bool `json:"is_public"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can modify this folder.", nil)
+		return
+	}
+
+	err = fc.FolderService.UpdateFolderPublicStatus(c, folderID, request.IsPublic)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to update folder public status.", nil)
+		return
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder public status updated successfully.", request)
+}
+
+func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		IsPublic bool `json:"is_public"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can modify this folder.", nil)
+		return
+	}
+
+	err = fc.FolderService.UpdateFolderAndSubfoldersPublicStatus(c, folderID, request.IsPublic)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to update folder and subfolders public status.", nil)
+		return
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder and subfolders public status updated successfully.", request)
+}
+
+func (fc *FolderController) GetFolderPublicStatusHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to retrieve folder public status.", nil)
+		return
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder public status retrieved successfully.", gin.H{
+		"is_public": folder.IsPublic,
+	})
+}
+
+func (fc *FolderController) ShareFolderHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		UserID     string `json:"user_id"`
+		Permission bool   `json:"permission"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can share this folder.", nil)
+		return
+	}
+
+	err = fc.FolderService.ShareFolder(c, folderID, request.UserID, request.Permission)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to share folder.", nil)
+		return
+	}
+
+	// the data return should be the list of shared users
+	sharedUsers, err := fc.FolderService.GetFolderSharedUsers(c, folderID)
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder shared successfully.", sharedUsers)
+}
+
+func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		UserID string `json:"user_id"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can remove share permissions.", nil)
+		return
+	}
+	sharedUsers, err := fc.FolderService.GetFolderSharedUsers(c, folderID)
+
+	err = fc.FolderService.RemoveFolderShare(c, folderID, request.UserID)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to remove folder share.", nil)
+		return
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder share removed successfully.", sharedUsers)
+}
+
+func (fc *FolderController) GetFolderSharedUsersHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	sharedUsers, err := fc.FolderService.GetFolderSharedUsers(c, folderID)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to retrieve shared users.", nil)
+		return
+	}
+
+	if sharedUsers == nil {
+		sharedUsers = []*models.FolderSharedUser{}
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Shared users retrieved successfully.", sharedUsers)
+}
+
+func (fc *FolderController) ShareFolderAndSubfoldersHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		UserID     string `json:"user_id"`
+		Permission bool   `json:"permission"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can share this folder.", nil)
+		return
+	}
+
+	err = fc.FolderService.ShareFolderAndSubfolders(c, folderID, request.UserID, request.Permission)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to share folder and subfolders.", nil)
+		return
+	}
+
+	sharedUsers, err := fc.FolderService.GetFolderSharedUsers(c, folderID)
+	shared.RespondJson(c, http.StatusOK, "success", "Folder and subfolders shared successfully.", sharedUsers)
+}
+
+func (fc *FolderController) RevokeFolderAndSubfoldersShareHandler(c *gin.Context) {
+	folderID := c.Param("folderId")
+	if folderID == "" {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Folder ID is required.", nil)
+		return
+	}
+
+	var request struct {
+		UserID string `json:"user_id"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
+		return
+	}
+
+	ownerID := c.MustGet("x-user-id-hex").(primitive.ObjectID).Hex()
+	folder, err := fc.FolderService.GetFolderByID(c, folderID)
+	if err != nil || folder.OwnerID.Hex() != ownerID {
+		shared.RespondJson(c, http.StatusForbidden, "error", "Only the owner can revoke share permissions.", nil)
+		return
+	}
+	sharedUsers, err := fc.FolderService.GetFolderSharedUsers(c, folderID)
+
+	err = fc.FolderService.RevokeFolderAndSubfoldersShare(c, folderID, request.UserID)
+	if err != nil {
+		shared.RespondJson(c, http.StatusInternalServerError, "error", "Failed to revoke folder and subfolders share.", nil)
+		return
+	}
+
+	shared.RespondJson(c, http.StatusOK, "success", "Folder and subfolders share revoked successfully.", sharedUsers)
+}
