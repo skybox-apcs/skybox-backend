@@ -290,6 +290,43 @@ definitions:
       username:
         type: string
     type: object
+  models.UpdateFolderPublicStatusRequest:
+    type: object
+    required:
+      - is_public
+    properties:
+      is_public:
+        type: boolean
+        description: Indicates whether the folder is public or private
+  models.ShareFolderRequest:
+    type: object
+    required:
+      - user_id
+      - permission
+    properties:
+      user_id:
+        type: string
+        description: ID of the user to share the folder with
+      permission:
+        type: string
+        description: Permission level (e.g., true for edit permission, false for view permission)
+  models.RemoveShareRequest:
+    type: object
+    required:
+      - user_id
+    properties:
+      user_id:
+        type: string
+        description: ID of the user to remove sharing permissions for
+  models.SharedUser:
+    type: object
+    properties:
+      user_id:
+        type: string
+        description: ID of the shared user
+      permission:
+        type: string
+        description: Permission level granted to the user (e.g., true for edit permission, false for view permission)
 externalDocs:
   description: OpenAPI Documentation
   url: https://swagger.io/resources/open-api/
@@ -1028,6 +1065,253 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
+  /api/v1/folders/{folderId}/public-status:
+    put:
+      summary: Update folder public status
+      description: Updates the public status of a folder by its ID.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.UpdateFolderPublicStatusRequest'
+      responses:
+        "200":
+          description: Folder public status updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+  /api/v1/folders/{folderId}/public-status/all:
+    put:
+      summary: Update folder and subfolders public status
+      description: Updates the public status of a folder and all its subfolders.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.UpdateFolderPublicStatusRequest'
+      responses:
+        "200":
+          description: Folder and subfolders public status updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+  /api/v1/folders/{folderId}/share:
+    post:
+      summary: Share a folder
+      description: Shares a folder with a user by providing the user ID and permission.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.ShareFolderRequest'
+      responses:
+        "200":
+          description: Folder shared successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can share this folder
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+    delete:
+      summary: Remove folder share
+      description: Removes sharing permissions for a specific user on a folder.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.RemoveShareRequest'
+      responses:
+        "200":
+          description: Folder share removed successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+  /api/v1/folders/{folderId}/share/all:
+    post:
+      summary: Share folder and subfolders
+      description: Shares a folder and all its subfolders with a user.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.ShareFolderRequest'
+      responses:
+        "200":
+          description: Folder and subfolders shared successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can share this folder
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+    delete:
+      summary: Revoke folder and subfolders share
+      description: Revokes sharing permissions for a specific user on a folder and all its subfolders.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+        - name: request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/models.RemoveShareRequest'
+      responses:
+        "200":
+          description: Folder and subfolders share revoked successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
+  /api/v1/folders/{folderId}/shared-users:
+    get:
+      summary: Get shared users
+      description: Retrieves a list of users with whom the folder is shared.
+      tags:
+        - Folders
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          type: string
+          description: Folder ID
+      responses:
+        "200":
+          description: List of shared users retrieved successfully
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.SharedUser'
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+        - Bearer: [ ]
 securityDefinitions:
   Bearer:
     description: Use "Bearer {your_token}" to authenticate requests.

@@ -34,6 +34,7 @@ func NewFolderRouters(db *mongo.Database, group *gin.RouterGroup) {
 
 		folderGroup.POST("/:folderId/upload", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UploadFileMetadataHandler) // TODO: Implement upload file metadata handler
 
+		// Share
 		folderGroup.PUT("/:folderId/public-status", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UpdateFolderPublicStatusHandler)
 		folderGroup.PUT("/:folderId/public-status/all", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UpdateFolderAndSubfoldersPublicStatusHandler)
 		folderGroup.GET("/:folderId/public-status", middlewares.FolderPermissionMiddleware(fc, "view"), fc.GetFolderPublicStatusHandler)
