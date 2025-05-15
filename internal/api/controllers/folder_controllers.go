@@ -441,6 +441,20 @@ func (fc *FolderController) CheckFolderPermission(c *gin.Context, folderID strin
 	return isPublic, nil
 }
 
+// UpdateFolderPublicStatusHandler updates the public status of a folder (public for everyone to view or restricted to only added members).
+// @Summary Update folder public status of a folder (public for everyone to view or restricted to only added members)
+// @Description Updates the public status of a folder by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.UpdateFolderPublicStatusRequest true "Update Folder Public Status Request"
+// @Success 200 {string} string "Folder public status updated successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "Folder not found"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
+// @Router /api/v1/folders/{folderId}/public-status [patch]
 func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -472,6 +486,19 @@ func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "Folder public status updated successfully.", request)
 }
 
+// UpdateFolderAndSubfoldersPublicStatusHandler updates the public status of a folder and its subfolders.
+// @Summary Update folder and subfolders public status
+// @Description Updates the public status of a folder and all its subfolders by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.UpdateFolderPublicStatusRequest true "Update Folder Public Status Request"
+// @Success 200 {string} string "Folder and subfolders public status updated successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "Folder not found"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -503,6 +530,18 @@ func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.
 	shared.RespondJson(c, http.StatusOK, "success", "Folder and subfolders public status updated successfully.", request)
 }
 
+// GetFolderPublicStatusHandler retrieves the public status of a folder.
+// @Summary Get folder public status
+// @Description Retrieves the public status of a folder by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Success 200 {string} string "Folder public status retrieved successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "Folder not found"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) GetFolderPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -521,6 +560,19 @@ func (fc *FolderController) GetFolderPublicStatusHandler(c *gin.Context) {
 	})
 }
 
+// ShareFolderHandler shares a folder with a user (share edit permission by specifying permission = true, view permission by specifying permission = false.
+// @Summary Share a folder
+// @Description Shares a folder with a user by providing the user ID and permission.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.ShareFolderRequest true "Share Folder Request"
+// @Success 200 {string} string "Folder shared successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 403 {string} string "Only the owner can share this folder"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) ShareFolderHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -556,6 +608,19 @@ func (fc *FolderController) ShareFolderHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "Folder shared successfully.", sharedUsers)
 }
 
+// RemoveFolderShareHandler removes sharing permissions for a folder.
+// @Summary Remove folder share
+// @Description Removes sharing permissions for a folder by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.RemoveFolderShareRequest true "Remove Folder Share Request"
+// @Success 200 {string} string "Folder share removed successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 403 {string} string "Only the owner can remove share permissions"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -588,6 +653,18 @@ func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "Folder share removed successfully.", sharedUsers)
 }
 
+// GetFolderSharedUsersHandler retrieves the list of users a folder is shared with.
+// @Summary Get folder shared users
+// @Description Retrieves the list of users a folder is shared with by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Success 200 {array} models.SharedUser "List of shared users"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "Folder not found"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) GetFolderSharedUsersHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -608,6 +685,19 @@ func (fc *FolderController) GetFolderSharedUsersHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "Shared users retrieved successfully.", sharedUsers)
 }
 
+// ShareFolderAndSubfoldersHandler shares a folder and its subfolders with a user.
+// @Summary Share folder and subfolders
+// @Description Shares a folder and all its subfolders with a user by providing the user ID and permission.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.ShareFolderRequest true "Share Folder Request"
+// @Success 200 {string} string "Folder and subfolders shared successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 403 {string} string "Only the owner can share this folder"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) ShareFolderAndSubfoldersHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -641,6 +731,19 @@ func (fc *FolderController) ShareFolderAndSubfoldersHandler(c *gin.Context) {
 	shared.RespondJson(c, http.StatusOK, "success", "Folder and subfolders shared successfully.", sharedUsers)
 }
 
+// RevokeFolderAndSubfoldersShareHandler revokes sharing permissions for a folder and its subfolders.
+// @Summary Revoke folder and subfolders share
+// @Description Revokes sharing permissions for a folder and all its subfolders by its ID.
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Param folderId path string true "Folder ID"
+// @Param request body models.RevokeFolderShareRequest true "Revoke Folder Share Request"
+// @Success 200 {string} string "Folder and subfolders share revoked successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 403 {string} string "Only the owner can revoke share permissions"
+// @Failure 500 {string} string "Internal server error"
+// @Security Bearer
 func (fc *FolderController) RevokeFolderAndSubfoldersShareHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
