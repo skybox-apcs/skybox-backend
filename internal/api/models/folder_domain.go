@@ -71,12 +71,12 @@ type UploadFileMetadataResponse struct {
 }
 
 type UpdateFolderPublicRequest struct {
-	IsPublic bool `json:"is_public" binding:"required"`
+	IsPublic bool `json:"is_public"`
 }
 
 type ShareFolderRequest struct {
 	UserID     string `json:"user_id" binding:"required"`
-	Permission bool   `json:"permission" binding:"required"`
+	Permission bool   `json:"permission"`
 }
 
 type RevokeFolderShareRequest struct {
