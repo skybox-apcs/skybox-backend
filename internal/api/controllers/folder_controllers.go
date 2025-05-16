@@ -454,7 +454,7 @@ func (fc *FolderController) CheckFolderPermission(c *gin.Context, folderID strin
 // @Failure 404 {string} string "Folder not found"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
-// @Router /api/v1/folders/{folderId}/public-status [patch]
+// @Router /api/v1/folders/{folderId}/public-status [put]
 func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -497,6 +497,7 @@ func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 // @Failure 404 {string} string "Folder not found"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/public-status/all [put]
 func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -538,6 +539,7 @@ func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.
 // @Failure 404 {string} string "Folder not found"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/public-status [get]
 func (fc *FolderController) GetFolderPublicStatusHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -569,6 +571,7 @@ func (fc *FolderController) GetFolderPublicStatusHandler(c *gin.Context) {
 // @Failure 403 {string} string "Only the owner can share this folder"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/share [post]
 func (fc *FolderController) ShareFolderHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -617,6 +620,7 @@ func (fc *FolderController) ShareFolderHandler(c *gin.Context) {
 // @Failure 403 {string} string "Only the owner can remove share permissions"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/share [delete]
 func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -661,6 +665,7 @@ func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
 // @Failure 404 {string} string "Folder not found"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/shared-users [get]
 func (fc *FolderController) GetFolderSharedUsersHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -694,6 +699,7 @@ func (fc *FolderController) GetFolderSharedUsersHandler(c *gin.Context) {
 // @Failure 403 {string} string "Only the owner can share this folder"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/share/all [post]
 func (fc *FolderController) ShareFolderAndSubfoldersHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {
@@ -740,6 +746,7 @@ func (fc *FolderController) ShareFolderAndSubfoldersHandler(c *gin.Context) {
 // @Failure 403 {string} string "Only the owner can revoke share permissions"
 // @Failure 500 {string} string "Internal server error"
 // @Security Bearer
+// @Router /api/v1/folders/{folderId}/share/all [delete]
 func (fc *FolderController) RevokeFolderAndSubfoldersShareHandler(c *gin.Context) {
 	folderID := c.Param("folderId")
 	if folderID == "" {

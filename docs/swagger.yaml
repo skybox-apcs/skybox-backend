@@ -942,7 +942,41 @@ paths:
       tags:
       - Folders
   /api/v1/folders/{folderId}/public-status:
-    patch:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the public status of a folder by its ID.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder public status retrieved successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get folder public status
+      tags:
+      - Folders
+    put:
       consumes:
       - application/json
       description: Updates the public status of a folder by its ID.
@@ -981,6 +1015,48 @@ paths:
       - Bearer: []
       summary: Update folder public status of a folder (public for everyone to view
         or restricted to only added members)
+      tags:
+      - Folders
+  /api/v1/folders/{folderId}/public-status/all:
+    put:
+      consumes:
+      - application/json
+      description: Updates the public status of a folder and all its subfolders by
+        its ID.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      - description: Update Folder Public Status Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateFolderPublicRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder and subfolders public status updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Update folder and subfolders public status
       tags:
       - Folders
   /api/v1/folders/{folderId}/rename:
@@ -1068,6 +1144,207 @@ paths:
       security:
       - Bearer: []
       summary: Rename a specific folder
+      tags:
+      - Folders
+  /api/v1/folders/{folderId}/share:
+    delete:
+      consumes:
+      - application/json
+      description: Removes sharing permissions for a folder by its ID.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      - description: Remove Folder Share Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RemoveFolderShareRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder share removed successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can remove share permissions
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Remove folder share
+      tags:
+      - Folders
+    post:
+      consumes:
+      - application/json
+      description: Shares a folder with a user by providing the user ID and permission.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      - description: Share Folder Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ShareFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder shared successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can share this folder
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Share a folder
+      tags:
+      - Folders
+  /api/v1/folders/{folderId}/share/all:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes sharing permissions for a folder and all its subfolders
+        by its ID.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      - description: Revoke Folder Share Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RevokeFolderShareRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder and subfolders share revoked successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can revoke share permissions
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Revoke folder and subfolders share
+      tags:
+      - Folders
+    post:
+      consumes:
+      - application/json
+      description: Shares a folder and all its subfolders with a user by providing
+        the user ID and permission.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      - description: Share Folder Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ShareFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Folder and subfolders shared successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "403":
+          description: Only the owner can share this folder
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Share folder and subfolders
+      tags:
+      - Folders
+  /api/v1/folders/{folderId}/shared-users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the list of users a folder is shared with by its ID.
+      parameters:
+      - description: Folder ID
+        in: path
+        name: folderId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of shared users
+          schema:
+            items:
+              $ref: '#/definitions/models.FolderSharedUser'
+            type: array
+        "400":
+          description: Invalid request
+          schema:
+            type: string
+        "404":
+          description: Folder not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Get folder shared users
       tags:
       - Folders
   /api/v1/folders/{folderId}/upload:
