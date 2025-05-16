@@ -6,8 +6,8 @@ import (
 	"skybox-backend/internal/shared/middlewares"
 
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -26,6 +26,9 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 		// Setup the auth routes
 		NewAuthRouters(db, v1)
 
+		// Setup the user routes
+		NewUserRouters(db, v1)
+
 		// Hello World routes
 		v1.GET("/hello", controllers.HelloWorldHandler)
 	}
@@ -37,9 +40,6 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 	v1 = protectedRouter.Group("/api/v1")
 
 	{
-		// Setup the user routes
-		NewUserRouters(db, v1)
-
 		// Setup the folder routes
 		NewFolderRouters(db, v1)
 

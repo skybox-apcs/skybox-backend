@@ -74,6 +74,25 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (*mo
 	return user, nil
 }
 
+// GetUsersByEmails retrieves users by their emails
+func (ur *userRepository) GetUsersByEmails(ctx context.Context, emails []string) ([]*models.User, error) {
+	collection := ur.database.Collection(ur.collection)
+
+	// Query users with emails in the list
+	cursor, err := collection.Find(ctx, bson.M{"email": bson.M{"$in": emails}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Decode the results into a slice of users
+	var users []*models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // GetUserByID retrieves a user by ID
 func (ur *userRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
