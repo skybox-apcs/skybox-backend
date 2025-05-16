@@ -29,3 +29,24 @@ func (us *UserService) GetUsersByIDs(ctx context.Context, ids []string) ([]*mode
 
 	return us.userRepository.GetUsersByIDs(ctx, ids)
 }
+
+func (us *UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.userRepository.GetUserByEmail(ctx, email)
+}
+
+func (us *UserService) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.userRepository.GetUserByUsername(ctx, username)
+}
+
+func (us *UserService) GetUsersByEmails(ctx context.Context, emails []string) ([]*models.User, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	return us.userRepository.GetUsersByEmails(ctx, emails)
+}
