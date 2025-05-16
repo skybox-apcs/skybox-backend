@@ -26,7 +26,7 @@ func NewUserRouters(db *mongo.Database, group *gin.RouterGroup) {
 		publicGroup.GET("/:userId", uc.GetUserByIDHandler)
 		publicGroup.GET("/email/:email", uc.GetUserByEmailHandler)
 		publicGroup.POST("/ids", uc.GetUsersByIDsHandler)
-		publicGroup.GET("/emails", uc.GetUsersByEmailsHandler)
+		publicGroup.POST("/emails", uc.GetUsersByEmailsHandler)
 	}
 
 	privateGroup := userGroup.Group("")
