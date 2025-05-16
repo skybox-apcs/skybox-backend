@@ -69,3 +69,20 @@ type UploadFileMetadataResponse struct {
 	File      FileResponse `json:"file"`
 	UploadURL string       `json:"upload_url" binding:"required"`
 }
+
+type UpdateFolderPublicRequest struct {
+	IsPublic bool `json:"is_public" binding:"required"`
+}
+
+type ShareFolderRequest struct {
+	UserID     string `json:"user_id" binding:"required"`
+	Permission bool   `json:"permission" binding:"required"`
+}
+
+type RevokeFolderShareRequest struct {
+	UserID string `json:"user_id" binding:"required"`
+}
+
+type RemoveFolderShareRequest struct {
+	UserID string `json:"user_id" binding:"required"`
+}

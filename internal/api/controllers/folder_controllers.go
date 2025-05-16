@@ -448,7 +448,7 @@ func (fc *FolderController) CheckFolderPermission(c *gin.Context, folderID strin
 // @Accept json
 // @Produce json
 // @Param folderId path string true "Folder ID"
-// @Param request body models.UpdateFolderPublicStatusRequest true "Update Folder Public Status Request"
+// @Param request body models.UpdateFolderPublicRequest true "Update Folder Public Status Request"
 // @Success 200 {string} string "Folder public status updated successfully"
 // @Failure 400 {string} string "Invalid request"
 // @Failure 404 {string} string "Folder not found"
@@ -462,9 +462,7 @@ func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 		return
 	}
 
-	var request struct {
-		IsPublic bool `json:"is_public"`
-	}
+	var request models.UpdateFolderPublicRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
 		return
@@ -493,7 +491,7 @@ func (fc *FolderController) UpdateFolderPublicStatusHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param folderId path string true "Folder ID"
-// @Param request body models.UpdateFolderPublicStatusRequest true "Update Folder Public Status Request"
+// @Param request body models.UpdateFolderPublicRequest true "Update Folder Public Status Request"
 // @Success 200 {string} string "Folder and subfolders public status updated successfully"
 // @Failure 400 {string} string "Invalid request"
 // @Failure 404 {string} string "Folder not found"
@@ -506,9 +504,7 @@ func (fc *FolderController) UpdateFolderAndSubfoldersPublicStatusHandler(c *gin.
 		return
 	}
 
-	var request struct {
-		IsPublic bool `json:"is_public"`
-	}
+	var request models.UpdateFolderPublicRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		shared.RespondJson(c, http.StatusBadRequest, "error", "Invalid request.", nil)
 		return
@@ -660,7 +656,7 @@ func (fc *FolderController) RemoveFolderShareHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param folderId path string true "Folder ID"
-// @Success 200 {array} models.SharedUser "List of shared users"
+// @Success 200 {array} models.FolderSharedUser "List of shared users"
 // @Failure 400 {string} string "Invalid request"
 // @Failure 404 {string} string "Folder not found"
 // @Failure 500 {string} string "Internal server error"
