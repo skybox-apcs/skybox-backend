@@ -3,8 +3,9 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"skybox-backend/internal/api/models"
 
@@ -66,7 +67,7 @@ func (fr *FolderRepository) CreateFolder(ctx context.Context, folder *models.Fol
 func (fr *FolderRepository) GetFolderByID(ctx context.Context, id string) (*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 	userIDValue := ctx.Value("x-user-id-hex")
-	userID, ok := userIDValue.(primitive.ObjectID)
+	_, ok := userIDValue.(primitive.ObjectID)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context or invalid type")
 	}
@@ -444,7 +445,7 @@ func (fr *FolderRepository) MoveFolder(ctx context.Context, id string, newParent
 	return err
 }
 
-func (fr *folderRepository) SearchFolders(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.Folder, error) {
+func (fr *FolderRepository) SearchFolders(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.Folder, error) {
 	collection := fr.database.Collection(fr.collection)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -482,7 +483,7 @@ func (fr *folderRepository) SearchFolders(ctx context.Context, ownerId primitive
 	return folders, nil
 }
 
-func (fr *folderRepository) UpdateFolderPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+func (fr *FolderRepository) UpdateFolderPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
 	collection := fr.database.Collection(fr.collection)
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
@@ -495,7 +496,7 @@ func (fr *folderRepository) UpdateFolderPublicStatus(ctx context.Context, folder
 	return err
 }
 
-func (fr *folderRepository) UpdateFolderAndAllSubfoldersPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
+func (fr *FolderRepository) UpdateFolderAndAllSubfoldersPublicStatus(ctx context.Context, folderID string, isPublic bool) error {
 	collection := fr.database.Collection(fr.collection)
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
@@ -542,7 +543,7 @@ func (fr *folderRepository) UpdateFolderAndAllSubfoldersPublicStatus(ctx context
 	return nil
 }
 
-func (fr *folderRepository) GetFolderShareInfo(ctx context.Context, folderID string) (bool, error) {
+func (fr *FolderRepository) GetFolderShareInfo(ctx context.Context, folderID string) (bool, error) {
 	collection := fr.database.Collection(fr.collection)
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
@@ -558,7 +559,7 @@ func (fr *folderRepository) GetFolderShareInfo(ctx context.Context, folderID str
 	return folder.IsPublic, nil
 }
 
-func (fr *folderRepository) GetFolderSharedUsers(ctx context.Context, folderID string) ([]*models.FolderSharedUser, error) {
+func (fr *FolderRepository) GetFolderSharedUsers(ctx context.Context, folderID string) ([]*models.FolderSharedUser, error) {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
 	if err != nil {
@@ -579,7 +580,7 @@ func (fr *folderRepository) GetFolderSharedUsers(ctx context.Context, folderID s
 	return sharedUsers, nil
 }
 
-func (fr *folderRepository) GetFolderSharedUser(ctx context.Context, folderID string, userID string) (*models.FolderSharedUser, error) {
+func (fr *FolderRepository) GetFolderSharedUser(ctx context.Context, folderID string, userID string) (*models.FolderSharedUser, error) {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -600,7 +601,7 @@ func (fr *folderRepository) GetFolderSharedUser(ctx context.Context, folderID st
 	return sharedUser, nil
 }
 
-func (fr *folderRepository) ShareFolder(ctx context.Context, folderID, userID string, permission bool) error {
+func (fr *FolderRepository) ShareFolder(ctx context.Context, folderID, userID string, permission bool) error {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -618,7 +619,7 @@ func (fr *folderRepository) ShareFolder(ctx context.Context, folderID, userID st
 	return err
 }
 
-func (fr *folderRepository) RemoveFolderShare(ctx context.Context, folderID, userID string) error {
+func (fr *FolderRepository) RemoveFolderShare(ctx context.Context, folderID, userID string) error {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 
 	folderIDHex, err := primitive.ObjectIDFromHex(folderID)
@@ -634,7 +635,7 @@ func (fr *folderRepository) RemoveFolderShare(ctx context.Context, folderID, use
 	return err
 }
 
-func (fr *folderRepository) ShareFolderAndAllSubfolders(ctx context.Context, folderID, userID string, permission bool) error {
+func (fr *FolderRepository) ShareFolderAndAllSubfolders(ctx context.Context, folderID, userID string, permission bool) error {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 	folderCollection := fr.database.Collection(fr.collection)
 
@@ -691,7 +692,7 @@ func (fr *folderRepository) ShareFolderAndAllSubfolders(ctx context.Context, fol
 	return nil
 }
 
-func (fr *folderRepository) RevokeFolderAndAllSubfoldersShare(ctx context.Context, folderID, userID string) error {
+func (fr *FolderRepository) RevokeFolderAndAllSubfoldersShare(ctx context.Context, folderID, userID string) error {
 	collection := fr.database.Collection(models.CollectionFolderSharedUsers)
 	folderCollection := fr.database.Collection(fr.collection)
 

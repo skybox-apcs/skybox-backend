@@ -60,8 +60,9 @@ func (fr *FileRepository) UploadFileMetadata(ctx context.Context, file *models.F
 
 func (fr *FileRepository) GetFileByID(ctx context.Context, id string) (*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
+
 	userIDValue := ctx.Value("x-user-id-hex")
-	userID, ok := userIDValue.(primitive.ObjectID)
+	_, ok := userIDValue.(primitive.ObjectID)
 	if !ok {
 		return nil, fmt.Errorf("user ID not found in context or invalid type")
 	}
@@ -172,7 +173,7 @@ func (fr *FileRepository) MoveFile(ctx context.Context, id string, newParentFold
 	return nil
 }
 
-func (fr *fileRepository) SearchFiles(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.File, error) {
+func (fr *FileRepository) SearchFiles(ctx context.Context, ownerId primitive.ObjectID, query string) ([]*models.File, error) {
 	collection := fr.database.Collection(fr.collection)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

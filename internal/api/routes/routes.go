@@ -7,7 +7,6 @@ import (
 	"skybox-backend/internal/api/repositories"
 	"skybox-backend/internal/api/services"
 	"skybox-backend/internal/shared/middlewares"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -39,9 +38,6 @@ type ApplicationContainer struct {
 	FolderController        *controllers.FolderController
 	UploadSessionController *controllers.UploadSessionController
 	UserController          *controllers.UserController
-
-	// Mutex for thread-safe operations
-	mu sync.Mutex
 }
 
 func (app *ApplicationContainer) SetupRepositories(db *mongo.Database) {
@@ -124,6 +120,9 @@ func SetupRouter(db *mongo.Database, gin *gin.Engine) *gin.Engine {
 
 		// Setup the upload routes
 		NewUploadRouters(db, v1)
+
+		// Setup the search routes
+		NewSearchRouters(db, v1)
 	}
 
 	return gin

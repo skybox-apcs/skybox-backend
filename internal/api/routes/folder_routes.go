@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"skybox-backend/internal/shared/middlewares"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -22,6 +24,16 @@ func NewFolderRouters(db *mongo.Database, group *gin.RouterGroup) {
 		folderGroup.PATCH("/:folderId/rename", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.RenameFolderHandler)
 		folderGroup.PUT("/:folderId/move", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.MoveFolderHandler)
 
-		folderGroup.POST("/:folderId/upload", fc.UploadFileMetadataHandler)
+		folderGroup.POST("/:folderId/upload", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UploadFileMetadataHandler) // TODO: Implement upload file metadata handler
+
+		// Share
+		folderGroup.PUT("/:folderId/public-status", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UpdateFolderPublicStatusHandler)
+		folderGroup.PUT("/:folderId/public-status/all", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.UpdateFolderAndSubfoldersPublicStatusHandler)
+		folderGroup.GET("/:folderId/public-status", middlewares.FolderPermissionMiddleware(fc, "view"), fc.GetFolderPublicStatusHandler)
+		folderGroup.POST("/:folderId/share", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.ShareFolderHandler)
+		folderGroup.DELETE("/:folderId/share", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.RemoveFolderShareHandler)
+		folderGroup.GET("/:folderId/shared-users", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.GetFolderSharedUsersHandler)
+		folderGroup.POST("/:folderId/share/all", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.ShareFolderAndSubfoldersHandler)
+		folderGroup.DELETE("/:folderId/share/all", middlewares.FolderPermissionMiddleware(fc, "edit"), fc.RevokeFolderAndSubfoldersShareHandler)
 	}
 }
