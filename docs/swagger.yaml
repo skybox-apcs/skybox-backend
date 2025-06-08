@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  controllers.SearchResult:
+    properties:
+      id:
+        type: string
+      is_file:
+        type: boolean
+      name:
+        type: string
+    type: object
   models.AddChunkRequest:
     properties:
       chunk_hash:
@@ -317,15 +326,12 @@ definitions:
       user_id:
         type: string
     required:
-    - permission
     - user_id
     type: object
   models.UpdateFolderPublicRequest:
     properties:
       is_public:
         type: boolean
-    required:
-    - is_public
     type: object
   models.UploadFileMetadataRequest:
     properties:
@@ -1488,6 +1494,142 @@ paths:
       summary: Get an upload session by session token
       tags:
       - UploadSession
+  /api/v1/user/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Get user by ID
+      parameters:
+      - description: User ID
+        example: 1234567890abcdef12345678
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user by ID
+      tags:
+      - User
+  /api/v1/user/email/{email}:
+    get:
+      consumes:
+      - application/json
+      description: Get user by email
+      parameters:
+      - description: User email
+        example: email@example.com
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user by email
+      tags:
+      - User
+  /api/v1/user/emails:
+    post:
+      consumes:
+      - application/json
+      description: Get users by emails
+      parameters:
+      - description: User emails
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserEmailListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserListResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get users by emails
+      tags:
+      - User
+  /api/v1/user/ids:
+    post:
+      consumes:
+      - application/json
+      description: Get users by IDs
+      parameters:
+      - description: User IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserIDListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserListResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get users by IDs
+      tags:
+      - User
   /api/v1/user/info:
     get:
       consumes:
@@ -1510,6 +1652,52 @@ paths:
       summary: Returns the user information
       tags:
       - User
+  /download/{fileId}:
+    get:
+      consumes:
+      - application/json
+      description: Download a file by its ID. The file ID is a unique identifier for
+        the file in the database. The file is downloaded in chunks to optimize performance
+        and reduce memory usage.
+      parameters:
+      - description: File ID
+        example: 1234567890abcdef12345678
+        in: path
+        name: fileId
+        required: true
+        type: string
+      - description: Token
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWxlTmFtZSI6InRlc3QuanBnIiwib3duZXJJZCI6IjEyMzQ1Njc4OWFiY2RlZiIsImZpbGVTaXplIjoxMjM0NTY3ODkwLCJ0b3RhbENodW5rcyI6MTIzNDU2Nzg5MCwibWltZVR5cGUiOiJpbWFnZS9qcGcifQ.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWxlTmFtZSI6InRlc3QuanBnIiwib3duZXJJZCI6IjEyMzQ1Njc4OWFiY2RlZiIsImZpbGVTaXplIjoxMjM0NTY3ODkwLCJ0b3RhbENodW5rcyI6MTIzNDU2Nzg5MCwibWltZVR5cGUiOiJpbWFnZS9qcGcifQ
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File downloaded successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: File not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Download a file
+      tags:
+      - Files
   /hello:
     get:
       consumes:
@@ -1525,6 +1713,42 @@ paths:
       summary: Returns a hello world message
       tags:
       - Misc
+  /search:
+    get:
+      consumes:
+      - application/json
+      description: Search for files and folders by query
+      parameters:
+      - description: Owner ID
+        in: query
+        name: ownerId
+        required: true
+        type: string
+      - description: Search query
+        in: query
+        name: query
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/controllers.SearchResult'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Search files and folders
+      tags:
+      - Search
   /upload/{sessionToken}:
     put:
       consumes:

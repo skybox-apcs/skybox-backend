@@ -75,7 +75,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mo
 }
 
 // GetUsersByEmails retrieves users by their emails
-func (ur *userRepository) GetUsersByEmails(ctx context.Context, emails []string) ([]*models.User, error) {
+func (ur *UserRepository) GetUsersByEmails(ctx context.Context, emails []string) ([]*models.User, error) {
 	collection := ur.database.Collection(ur.collection)
 
 	// Query users with emails in the list
